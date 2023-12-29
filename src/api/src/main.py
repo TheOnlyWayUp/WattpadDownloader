@@ -33,7 +33,7 @@ async def download_book(story_id: int):
 
     # Book is compiled
     temp_file = tempfile.NamedTemporaryFile(
-        dir=".", suffix=".epub", delete=True
+        suffix=".epub", delete=True
     )  # Thanks https://stackoverflow.com/a/75398222
 
     # create epub file
@@ -57,4 +57,4 @@ app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8084)
+    uvicorn.run(app, host="0.0.0.0", port=80)
