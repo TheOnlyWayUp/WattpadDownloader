@@ -10,6 +10,12 @@ const config = {
   },
 
   plugins: [typography, daisyui],
+
+  daisyui: {
+    themes: [
+      "nord"
+    ],
+  },
 };
 
 module.exports = config;
