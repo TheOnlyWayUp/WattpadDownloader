@@ -1,16 +1,22 @@
-import aiohttp, asyncio
+import asyncio
 from ebooklib import epub
 import unicodedata
 import re
+from aiohttp_client_cache import CachedSession, FileBackend
 
 headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
 }
 
+cache = FileBackend(
+    use_temp=True,
+    expire_after=43200,  # 12 hours
+)
+
 
 async def retrieve_story(story_id: int, retry=True) -> dict:
     """Taking a story_id, return its information from the Wattpad API."""
-    async with aiohttp.ClientSession(headers=headers) as session:
+    async with CachedSession(headers=headers, cache=cache) as session:
         try:
             async with session.get(
                 f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
@@ -31,7 +37,7 @@ async def retrieve_story(story_id: int, retry=True) -> dict:
 
 async def fetch_part_content(part_id: int) -> str:
     """Return the HTML Content of a Part."""
-    async with aiohttp.ClientSession(headers=headers) as session:
+    async with CachedSession(headers=headers, cache=cache) as session:
         try:
             async with session.get(
                 f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
@@ -52,7 +58,7 @@ async def fetch_part_content(part_id: int) -> str:
 
 async def fetch_cover(url: str) -> bytes:
     """Fetch image bytes."""
-    async with aiohttp.ClientSession(headers=headers) as session:
+    async with CachedSession(headers=headers, cache=cache) as session:
         try:
             async with session.get(url) as response:
                 if not response.ok:
