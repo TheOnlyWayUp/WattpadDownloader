@@ -15,19 +15,19 @@
           <a
             href="https://rambhat.la"
             target="_blank"
-            class=" bg-green-300/50 btn">My Work</a
+            class=" bg-[#8dbef2] btn text-xl">My Work</a
           >
           <!-- Thanks https://cssf1.com/snippet/create-a-neon-effect-with-tailwindcss -->
           <a
             href="https://liberapay.com/TheOnlyWayUp/"
             target="_blank"
-            class=" bg-green-300 btn shadow-[0_0_2px_#fff,inset_0_0_2px_#fff,0_0_5px_#08f,0_0_15px_#08f,0_0_30px_#08f]"
+            class=" bg-[#8dbef2] btn text-2xl shadow-[0_0_2px_#fff,inset_0_0_2px_#fff,0_0_5px_#08f,0_0_1px_#08f,0_0_30px_#08f]"
             >Donate</a
           >
           <a
             href="https://discord.gg/P9RHC4KCwd"
             target="_blank"
-            class=" bg-green-300/50 btn">Discord</a
+            class=" bg-[#8dbef2] btn text-xl">Discord</a
           >
         </div>
         <div class="py-6 join">
