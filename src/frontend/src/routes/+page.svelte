@@ -1,11 +1,9 @@
 <script>
-  export let prerender = true;
-
   let story_id = "";
 </script>
 
 <div class="flex">
-  <div class="hero min-h-screen bg-slate-600">
+  <div class="hero min-h-screen bg-gradient-to-r from-cyan-900 to-amber-100">
     <div class="hero-content text-center">
       <div class="bg-slate-100 p-16 max-w-3xl rounded-lg outline">
         <h1
@@ -13,6 +11,25 @@
         >
           Wattpad Downloader
         </h1>
+        <div class="space-x-10 mt-10 mb-5">
+          <a
+            href="https://rambhat.la"
+            target="_blank"
+            class=" bg-green-300/50 btn">My Work</a
+          >
+          <!-- Thanks https://cssf1.com/snippet/create-a-neon-effect-with-tailwindcss -->
+          <a
+            href="https://liberapay.com/TheOnlyWayUp/"
+            target="_blank"
+            class=" bg-green-300 btn shadow-[0_0_2px_#fff,inset_0_0_2px_#fff,0_0_5px_#08f,0_0_15px_#08f,0_0_30px_#08f]"
+            >Donate</a
+          >
+          <a
+            href="https://discord.gg/P9RHC4KCwd"
+            target="_blank"
+            class=" bg-green-300/50 btn">Discord</a
+          >
+        </div>
         <div class="py-6 join">
           <input
             type="number"
