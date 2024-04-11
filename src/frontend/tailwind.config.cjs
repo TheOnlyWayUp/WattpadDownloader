@@ -13,7 +13,7 @@ const config = {
 
   daisyui: {
     themes: [
-      "nord"
+      "bumblebee"
     ],
   },
 };
