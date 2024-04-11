@@ -93,7 +93,7 @@
 
 <dialog id="AfterDownloadModal" class="modal">
   <div class="modal-box">
-    <h3 class="font-bold text-lg">Wait!</h3>
+    <h3 class="font-bold text-lg">Your download has started</h3>
     <div class="py-4 space-y-2">
       <p class="text-xl">
         Hi, thanks for using my site! If you found it useful, please consider <a
