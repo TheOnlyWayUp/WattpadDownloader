@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="https://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://wpd.rambhat.la</loc>
+     <xhtml:link
+        rel="alternate"
+        hreflang="en"
+        href="https://wpd.rambhat.la"
+     />
+     <lastmod>2024-04-11</lastmod>
+     <changefreq>monthly</changefreq>
+     <priority>1.0</priority>
+  </url>
+</urlset>
