@@ -30,7 +30,8 @@
               <button
                 class="label-text link"
                 onclick="StoryIDTutorialModal.showModal()"
-                data-umami-event="HowToStoryID">How to get a Story ID</button
+                data-umami-event="StoryIDTutorialModal Open"
+                >How to get a Story ID</button
               >
             </label>
           </div>
@@ -121,7 +122,10 @@
     <div class="pt-2">
       <form method="dialog">
         <!-- if there is a button in form, it will close the modal -->
-        <button class="btn w-full btn-sm btn-ghost">Close</button>
+        <button
+          class="btn w-full btn-sm btn-ghost"
+          data-umami-event="AfterDownloadModal Close">Close</button
+        >
       </form>
     </div>
   </div>
