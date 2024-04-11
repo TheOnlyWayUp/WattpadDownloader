@@ -15,19 +15,21 @@
           <a
             href="https://rambhat.la"
             target="_blank"
-            class=" bg-[#8dbef2] btn text-xl">My Work</a
+            class=" bg-[#8dbef2] btn text-xl"
+            data-umami-event="My Work">My Work</a
           >
           <!-- Thanks https://cssf1.com/snippet/create-a-neon-effect-with-tailwindcss -->
           <a
             href="https://liberapay.com/TheOnlyWayUp/"
             target="_blank"
             class=" bg-[#8dbef2] btn text-2xl shadow-[0_0_2px_#fff,inset_0_0_2px_#fff,0_0_5px_#08f,0_0_1px_#08f,0_0_30px_#08f]"
-            >Donate</a
+            data-umami-event="Donate">Donate</a
           >
           <a
             href="https://discord.gg/P9RHC4KCwd"
             target="_blank"
-            class=" bg-[#8dbef2] btn text-xl">Discord</a
+            class=" bg-[#8dbef2] btn text-xl"
+            data-umami-event="Discord">Discord</a
           >
         </div>
         <div class="py-6 join">
@@ -40,7 +42,8 @@
           <a
             class="btn btn-info rounded-l-none"
             class:btn-disabled={!story_id}
-            href={`/download/${story_id}`}>Download</a
+            href={`/download/${story_id}`}
+            data-umami-event="Download">Download</a
           >
         </div>
       </div>
