@@ -4,10 +4,7 @@
       <div class="bg-base-200 p-16 max-w-lg rounded-md">
         <h1 class="text-5xl font-bold">There was an error.</h1>
         <div class="py-6 join">
-          <a
-            class="btn btn-primary btn-ghost btn-outline rounded-l-none"
-            href="/">Home</a
-          >
+          <a class="btn btn-primary btn-lg" href="/">Home</a>
         </div>
       </div>
     </div>
@@ -22,7 +19,7 @@
           href="https://github.com/TheOnlyWayUp"
           class="underline"
           target="_blank">TheOnlyWayUp</a
-        > © 2023
+        > © 2024
       </p>
     </aside>
   </footer>
