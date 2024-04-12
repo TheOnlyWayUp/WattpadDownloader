@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="https://www.w3.org/1999/xhtml">
-  <url>
-    <loc>https://wpd.rambhat.la</loc>
-     <xhtml:link
-        rel="alternate"
-        hreflang="en"
-        href="https://wpd.rambhat.la"
-     />
-     <lastmod>2024-04-11</lastmod>
-     <changefreq>monthly</changefreq>
-     <priority>1.0</priority>
-  </url>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com - Thanks! -->
+
+
+<url>
+  <loc>https://wpd.rambhat.la/</loc>
+  <lastmod>2024-04-12T08:19:07+00:00</lastmod>
+</url>
+
+
 </urlset>
