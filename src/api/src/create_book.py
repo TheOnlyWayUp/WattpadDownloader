@@ -6,6 +6,7 @@ import backoff
 from aiohttp import ClientResponseError
 from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend
+from bs4 import BeautifulSoup
 
 
 headers = {
@@ -116,19 +117,38 @@ async def set_cover(book, data):
     book.set_cover("cover.jpg", await fetch_cover(data["cover"]))
 
 
-async def add_chapters(book, data):
+async def add_chapters(book, data, download_images: bool = False):
     chapters = []
 
     for part in data["parts"]:
         content = await fetch_part_content(part["id"])
         title = part["title"]
+        clean_title = slugify(title)
 
         # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
         chapter = epub.EpubHtml(
             title=title,
-            file_name=f"{slugify(title)}.xhtml",
+            file_name=f"{clean_title}.xhtml",
             lang=data["language"]["name"],
         )
+
+        if download_images:
+            soup = BeautifulSoup(content, "lxml")
+            async with CachedSession(cache=cache, headers=headers) as session:
+                for idx, image in enumerate(soup.find_all("img")):
+                    if not image["src"]:
+                        continue
+                    async with session.get(image["src"]) as response:
+                        img = epub.EpubImage(
+                            media_type="image/jpeg",
+                            content=await response.read(),
+                            file_name=f"static/{clean_title}/{idx}.jpeg",
+                        )
+                        book.add_item(img)
+                        content = content.replace(
+                            str(image), f'<img src="static/{clean_title}/{idx}.jpeg"/>'
+                        )
+
         chapter.set_content(f"<h1>{title}</h1>" + content)
 
         chapters.append(chapter)

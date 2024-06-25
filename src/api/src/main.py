@@ -1,6 +1,6 @@
 from pathlib import Path
-from fastapi import FastAPI
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from ebooklib import epub
 from create_book import retrieve_story, set_cover, set_metadata, add_chapters, slugify
 import tempfile
@@ -17,17 +17,29 @@ def home():
 
 
 @app.get("/download/{story_id}")
-async def download_book(story_id: int):
+async def download_book(story_id: int, download_images: bool = False):
     data = await retrieve_story(story_id)
     book = epub.EpubBook()
 
     # Metadata and Cover are updated
-    set_metadata(book, data)
+    try:
+        set_metadata(book, data)
+    except KeyError:
+        # raise HTTPException(
+        #     status_code=404,
+        #     detail='Story not found. Check the ID - Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+        # )
+        # return FileResponse(BUILD_PATH / "index.html", status_code=404)
+        return HTMLResponse(
+            status_code=404,
+            content='Story not found. Check the ID - Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+        )
+
     await set_cover(book, data)
     # print("Metadata Downloaded")
 
     # Chapters are downloaded
-    async for title in add_chapters(book, data):
+    async for title in add_chapters(book, data, download_images=download_images):
         # print(f"Part ({title}) downloaded")
         ...
 
@@ -46,7 +58,7 @@ async def download_book(story_id: int):
         BytesIO(book_data),
         media_type="application/epub+zip",
         headers={
-            "Content-Disposition": f'attachment; filename="{slugify(data["title"])}_{story_id}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+            "Content-Disposition": f'attachment; filename="{slugify(data["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
         },
     )
 
@@ -57,4 +69,4 @@ app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=80)
+    uvicorn.run(app, host="0.0.0.0", port=1112)

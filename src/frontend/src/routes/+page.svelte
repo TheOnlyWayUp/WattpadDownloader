@@ -1,57 +1,105 @@
 <script>
   let story_id = "";
+  let download_images = false;
+  let after_download_page = true;
 </script>
 
 <div>
-  <div class="hero min-h-screen bg-base-200">
-    <div class="hero-content flex-col lg:flex-row-reverse">
-      <div class="text-center lg:text-left lg:p-10">
-        <h1
-          class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
-        >
-          Wattpad Downloader
-        </h1>
-        <p class="py-6">
-          Download your favourite books as EPUBs with a single click!
-        </p>
-      </div>
-      <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
-        <form class="card-body">
-          <div class="form-control">
-            <input
-              type="number"
-              placeholder="Story ID"
-              class="input input-bordered"
-              bind:value={story_id}
-              required
-              name="story_id"
-            />
-            <label class="label" for="story_id">
-              <button
-                class="label-text link"
-                onclick="StoryIDTutorialModal.showModal()"
-                data-umami-event="StoryIDTutorialModal Open"
-                >How to get a Story ID</button
+  <div class="hero min-h-screen">
+    <div
+      class="hero-content flex-col lg:flex-row-reverse glass p-16 rounded shadow-sm"
+    >
+      {#if !after_download_page}
+        <div class="text-center lg:text-left lg:p-10">
+          <h1
+            class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
+          >
+            Wattpad Downloader
+          </h1>
+          <p class="pt-6 text-lg">
+            Download your favourite books with a single click!
+          </p>
+          <ul class="pt-4 list list-inside text-xl">
+            <li>06/24 - 🎉 Image Downloading!</li>
+          </ul>
+        </div>
+        <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
+          <form class="card-body">
+            <div class="form-control">
+              <input
+                type="number"
+                placeholder="Story ID"
+                class="input input-bordered"
+                bind:value={story_id}
+                required
+                name="story_id"
+              />
+              <label class="label" for="story_id">
+                <button
+                  class="label-text link"
+                  onclick="StoryIDTutorialModal.showModal()"
+                  data-umami-event="StoryIDTutorialModal Open"
+                  >How to get a Story ID</button
+                >
+              </label>
+            </div>
+
+            <div class="form-control mt-6">
+              <a
+                class="btn btn-primary rounded-l-none"
+                class:btn-disabled={!story_id}
+                data-umami-event="Download"
+                href={`/download/${story_id}${download_images ? "?download_images=true" : ""}`}
+                on:click={() => (after_download_page = true)}>Download</a
               >
-            </label>
-          </div>
+              <label class="cursor-pointer label">
+                <span class="label-text"
+                  >Include Images (<strong>Slower Download</strong>)</span
+                >
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-warning shadow-md"
+                  bind:checked={download_images}
+                />
+              </label>
+            </div>
+          </form>
 
-          <div class="form-control mt-6">
-            <a
-              class="btn btn-primary rounded-l-none"
-              class:btn-disabled={!story_id}
-              href={`/download/${story_id}`}
-              data-umami-event="Download"
-              download
-              onclick="AfterDownloadModal.showModal()">Download</a
+          <button
+            data-feedback-fish
+            class="link pb-4"
+            data-umami-event="Feedback">Feedback</button
+          >
+        </div>
+      {:else}
+        <div class="text-center max-w-4xl">
+          <h1 class="font-bold text-3xl">
+            Your download has <span
+              class="text-transparent bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
+              >Started</span
             >
+          </h1>
+          <div class="py-4 space-y-2">
+            <p class="text-2xl">
+              If you found this site useful, please consider <a
+                href="https://github.com/TheOnlyWayUp/WattpadDownloader"
+                target="_blank"
+                class="link"
+                data-umami-event="Star">starring the project</a
+              > to support WattpadDownloader.
+            </p>
+            <p class="text-lg pt-2">
+              You can also join us on <a
+                href="https://discord.gg/P9RHC4KCwd"
+                target="_blank"
+                class="link"
+                data-umami-event="Discord">discord</a
+              >, where we release features early and discuss updates.
+            </p>
           </div>
-        </form>
-
-        <button data-feedback-fish class="link pb-2" data-umami-event="Feedback"
-          >Feedback</button
-        >
-      </div>
+          <a href="/" class="btn btn-outline btn-lg mt-10">Download More</a>
+        </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -90,78 +138,3 @@
     <button>close</button>
   </form>
 </dialog>
-
-<dialog id="AfterDownloadModal" class="modal">
-  <div class="modal-box">
-    <h3 class="font-bold text-lg">Your download has started</h3>
-    <div class="py-4 space-y-2">
-      <p class="text-xl">
-        Hi, thanks for using my site! If you found it useful, please consider <a
-          href="https://liberapay.com/TheOnlyWayUp/"
-          target="_blank"
-          class="link"
-          data-umami-event="Donate">donating</a
-        > to keep this project alive.
-      </p>
-      <p>
-        You can also join us on <a
-          href="https://discord.gg/P9RHC4KCwd"
-          target="_blank"
-          class="link"
-          data-umami-event="Discord">discord</a
-        >, where we discuss updates and features.
-      </p>
-      <p class="text-lg">
-        Please take a look at <a
-          href="https://rambhat.la"
-          class="link"
-          data-umami-event="My Work">my work</a
-        >!
-      </p>
-    </div>
-    <div class="pt-2">
-      <form method="dialog">
-        <!-- if there is a button in form, it will close the modal -->
-        <button
-          class="btn w-full btn-sm btn-ghost"
-          data-umami-event="AfterDownloadModal Close">Close</button
-        >
-      </form>
-    </div>
-  </div>
-</dialog>
-
-<footer
-  class="footer footer-center p-4 bg-base-300 text-base-content bottom-0 fixed"
->
-  <aside>
-    <div class="grid grid-cols-3 max-w-lg w-full">
-      <a
-        href="https://liberapay.com/TheOnlyWayUp/"
-        target="_blank"
-        class="link"
-        data-umami-event="Footer Donate">Donate</a
-      >
-      <a
-        href="https://rambhat.la"
-        target="_blank"
-        class="link"
-        data-umami-event="Footer AboutMe">About Me</a
-      >
-      <a
-        href="https://discord.gg/P9RHC4KCwd"
-        target="_blank"
-        class="link"
-        data-umami-event="Footer Discord">Discord</a
-      >
-    </div>
-    <p>
-      Copyright © 2024 - All rights reserved by <a
-        href="https://rambhat.la"
-        class="link"
-        target="_blank"
-        data-umami-event="CopyrightHolder">Dhanush R</a
-      >
-    </p>
-  </aside>
-</footer>
