@@ -4,7 +4,9 @@
 
 <div>
   <div class="hero min-h-screen">
-    <div class="hero-content flex-col lg:flex-row-reverse">
+    <div
+      class="hero-content flex-col lg:flex-row-reverse glass p-16 rounded shadow-lg"
+    >
       <div class="text-center lg:text-left lg:p-10">
         <h1
           class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
@@ -15,7 +17,7 @@
           Download your favourite books with a single click!
         </p>
       </div>
-      <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
+      <div class="card shrink-0 w-full max-w-sm shadow-xl bg-base-100">
         <form class="card-body">
           <div class="form-control">
             <input
@@ -48,7 +50,7 @@
           </div>
         </form>
 
-        <button data-feedback-fish class="link pb-2" data-umami-event="Feedback"
+        <button data-feedback-fish class="link pb-4" data-umami-event="Feedback"
           >Feedback</button
         >
       </div>
