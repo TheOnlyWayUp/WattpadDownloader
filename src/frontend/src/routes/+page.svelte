@@ -5,7 +5,7 @@
 <div>
   <div class="hero min-h-screen">
     <div
-      class="hero-content flex-col lg:flex-row-reverse glass p-16 rounded shadow-lg"
+      class="hero-content flex-col lg:flex-row-reverse glass p-16 rounded shadow-sm"
     >
       <div class="text-center lg:text-left lg:p-10">
         <h1
@@ -13,11 +13,14 @@
         >
           Wattpad Downloader
         </h1>
-        <p class="py-6 text-lg">
+        <p class="pt-6 text-lg">
           Download your favourite books with a single click!
         </p>
+        <ul class="pt-4 list list-inside text-xl">
+          <li>06/24 - 🎉 Image Downloading!</li>
+        </ul>
       </div>
-      <div class="card shrink-0 w-full max-w-sm shadow-xl bg-base-100">
+      <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
         <form class="card-body">
           <div class="form-control">
             <input
