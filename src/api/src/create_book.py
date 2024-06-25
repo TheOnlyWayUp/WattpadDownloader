@@ -2,8 +2,11 @@ import asyncio
 from ebooklib import epub
 import unicodedata
 import re
+import backoff
+from aiohttp import ClientResponseError
 from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend
+
 
 headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -15,6 +18,7 @@ cache = FileBackend(
 )
 
 
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def retrieve_story(story_id: int, retry=True) -> dict:
     """Taking a story_id, return its information from the Wattpad API."""
     async with CachedSession(headers=headers, cache=cache) as session:
@@ -24,12 +28,14 @@ async def retrieve_story(story_id: int, retry=True) -> dict:
             if not response.ok:
                 if response.status in [404, 400]:
                     return {}
-                raise ValueError("Status Code:", response.status)
+            response.raise_for_status()
+
             body = await response.json()
 
     return body
 
 
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_part_content(part_id: int) -> str:
     """Return the HTML Content of a Part."""
     async with CachedSession(headers=headers, cache=cache) as session:
@@ -39,12 +45,14 @@ async def fetch_part_content(part_id: int) -> str:
             if not response.ok:
                 if response.status in [404, 400]:
                     return ""
-                raise ValueError("Status Code:", response.status)
+            response.raise_for_status()
+
             body = await response.text()
 
     return body
 
 
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_cover(url: str) -> bytes:
     """Fetch image bytes."""
     async with CachedSession(headers=headers, cache=cache) as session:
@@ -52,7 +60,8 @@ async def fetch_cover(url: str) -> bytes:
             if not response.ok:
                 if response.status in [404, 400]:
                     return bytes()
-                raise ValueError("Status Code:", response.status)
+            response.raise_for_status()
+
             body = await response.read()
 
     return body

@@ -8,6 +8,7 @@ anyio==4.2.0
 asttokens==2.4.1
 async-timeout==4.0.3
 attrs==23.1.0
+backoff==2.2.1
 click==8.1.7
 comm==0.2.0
 debugpy==1.8.0
