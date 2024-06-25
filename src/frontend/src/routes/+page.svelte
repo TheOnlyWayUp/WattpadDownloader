@@ -1,7 +1,7 @@
 <script>
   let story_id = "";
   let download_images = false;
-  let after_download_page = true;
+  let after_download_page = false;
 </script>
 
 <div>
