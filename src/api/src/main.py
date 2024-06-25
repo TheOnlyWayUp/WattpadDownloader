@@ -17,7 +17,7 @@ def home():
 
 
 @app.get("/download/{story_id}")
-async def download_book(story_id: int):
+async def download_book(story_id: int, download_images: bool = False):
     data = await retrieve_story(story_id)
     book = epub.EpubBook()
 
@@ -27,7 +27,7 @@ async def download_book(story_id: int):
     # print("Metadata Downloaded")
 
     # Chapters are downloaded
-    async for title in add_chapters(book, data):
+    async for title in add_chapters(book, data, download_images=download_images):
         # print(f"Part ({title}) downloaded")
         ...
 
@@ -57,4 +57,4 @@ app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=80)
+    uvicorn.run(app, host="0.0.0.0", port=1112)
