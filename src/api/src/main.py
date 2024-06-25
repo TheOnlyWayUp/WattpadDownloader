@@ -1,6 +1,6 @@
 from pathlib import Path
-from fastapi import FastAPI
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from ebooklib import epub
 from create_book import retrieve_story, set_cover, set_metadata, add_chapters, slugify
 import tempfile
@@ -22,7 +22,19 @@ async def download_book(story_id: int, download_images: bool = False):
     book = epub.EpubBook()
 
     # Metadata and Cover are updated
-    set_metadata(book, data)
+    try:
+        set_metadata(book, data)
+    except KeyError:
+        # raise HTTPException(
+        #     status_code=404,
+        #     detail='Story not found. Check the ID - Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+        # )
+        # return FileResponse(BUILD_PATH / "index.html", status_code=404)
+        return HTMLResponse(
+            status_code=404,
+            content='Story not found. Check the ID - Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+        )
+
     await set_cover(book, data)
     # print("Metadata Downloaded")
 

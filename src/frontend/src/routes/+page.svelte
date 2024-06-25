@@ -50,7 +50,6 @@
                 class:btn-disabled={!story_id}
                 data-umami-event="Download"
                 href={`/download/${story_id}${download_images ? "?download_images=true" : ""}`}
-                download
                 on:click={() => (after_download_page = true)}>Download</a
               >
               <label class="cursor-pointer label">
