@@ -1,7 +1,7 @@
 <script>
   let story_id = "";
   let download_images = false;
-  let after_download_page = false;
+  let after_download_page = true;
 </script>
 
 <div>
@@ -97,6 +97,7 @@
               >, where we release features early and discuss updates.
             </p>
           </div>
+          <a href="/" class="btn btn-outline btn-lg mt-10">Download More</a>
         </div>
       {/if}
     </div>
