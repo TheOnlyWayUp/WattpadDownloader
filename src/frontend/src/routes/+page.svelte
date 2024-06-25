@@ -138,38 +138,3 @@
     <button>close</button>
   </form>
 </dialog>
-
-<footer
-  class="footer footer-center p-4 bg-base-300 text-base-content bottom-0 fixed"
->
-  <aside>
-    <div class="grid grid-cols-3 max-w-lg w-full">
-      <a
-        href="https://liberapay.com/TheOnlyWayUp/"
-        target="_blank"
-        class="link"
-        data-umami-event="Footer Donate">Donate</a
-      >
-      <a
-        href="https://rambhat.la"
-        target="_blank"
-        class="link"
-        data-umami-event="Footer AboutMe">About Me</a
-      >
-      <a
-        href="https://discord.gg/P9RHC4KCwd"
-        target="_blank"
-        class="link"
-        data-umami-event="Footer Discord">Discord</a
-      >
-    </div>
-    <p>
-      Copyright © 2024 - All rights reserved by <a
-        href="https://rambhat.la"
-        class="link"
-        target="_blank"
-        data-umami-event="CopyrightHolder">Dhanush R</a
-      >
-    </p>
-  </aside>
-</footer>
