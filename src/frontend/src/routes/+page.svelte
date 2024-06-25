@@ -1,5 +1,6 @@
 <script>
   let story_id = "";
+  let download_images = false;
 </script>
 
 <div>
@@ -45,11 +46,21 @@
             <a
               class="btn btn-primary rounded-l-none"
               class:btn-disabled={!story_id}
-              href={`/download/${story_id}`}
+              href={`/download/${story_id}${download_images ? "?download_images=true" : ""}`}
               data-umami-event="Download"
               download
               onclick="AfterDownloadModal.showModal()">Download</a
             >
+            <label class="cursor-pointer label">
+              <span class="label-text"
+                >Include Images (<strong>Slower Download</strong>)</span
+              >
+              <input
+                type="checkbox"
+                class="checkbox checkbox-warning shadow-md"
+                bind:checked={download_images}
+              />
+            </label>
           </div>
         </form>
 
