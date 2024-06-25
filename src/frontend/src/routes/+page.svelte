@@ -3,7 +3,7 @@
 </script>
 
 <div>
-  <div class="hero min-h-screen bg-base-200">
+  <div class="hero min-h-screen">
     <div class="hero-content flex-col lg:flex-row-reverse">
       <div class="text-center lg:text-left lg:p-10">
         <h1
@@ -11,8 +11,8 @@
         >
           Wattpad Downloader
         </h1>
-        <p class="py-6">
-          Download your favourite books as EPUBs with a single click!
+        <p class="py-6 text-lg">
+          Download your favourite books with a single click!
         </p>
       </div>
       <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
