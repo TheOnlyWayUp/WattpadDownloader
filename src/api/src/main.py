@@ -58,7 +58,7 @@ async def download_book(story_id: int, download_images: bool = False):
         BytesIO(book_data),
         media_type="application/epub+zip",
         headers={
-            "Content-Disposition": f'attachment; filename="{slugify(data["title"])}_{story_id}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+            "Content-Disposition": f'attachment; filename="{slugify(data["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
         },
     )
 
