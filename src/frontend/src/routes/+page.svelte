@@ -113,11 +113,11 @@
     <div class="py-4 space-y-2">
       <p class="text-xl">
         Hi, thanks for using my site! If you found it useful, please consider <a
-          href="https://liberapay.com/TheOnlyWayUp/"
+          href="https://github.com/TheOnlyWayUp/WattpadDownloader"
           target="_blank"
           class="link"
-          data-umami-event="Donate">donating</a
-        > to keep this project alive.
+          data-umami-event="Star">starring the project</a
+        > to support WattpadDownloader.
       </p>
       <p>
         You can also join us on <a
@@ -125,7 +125,7 @@
           target="_blank"
           class="link"
           data-umami-event="Discord">discord</a
-        >, where we discuss updates and features.
+        >, where we release features early and discuss updates.
       </p>
       <p class="text-lg">
         Please take a look at <a
