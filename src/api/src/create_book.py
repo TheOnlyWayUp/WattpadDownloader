@@ -2,7 +2,8 @@ import asyncio
 from ebooklib import epub
 import unicodedata
 import re
-from aiohttp_client_cache import CachedSession, FileBackend
+from aiohttp_client_cache.session import CachedSession
+from aiohttp_client_cache import FileBackend
 
 headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -17,20 +18,14 @@ cache = FileBackend(
 async def retrieve_story(story_id: int, retry=True) -> dict:
     """Taking a story_id, return its information from the Wattpad API."""
     async with CachedSession(headers=headers, cache=cache) as session:
-        try:
-            async with session.get(
-                f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
-            ) as response:
-                if not response.ok:
-                    if response.status in [404, 400]:
-                        return {}
-                    raise ValueError("Status Code:", response.status)
-                body = await response.json()
-        except ValueError:
-            if not retry:
-                raise asyncio.TimeoutError()
-            await asyncio.sleep(15)
-            return await retrieve_story(story_id, retry=False)
+        async with session.get(
+            f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
+        ) as response:
+            if not response.ok:
+                if response.status in [404, 400]:
+                    return {}
+                raise ValueError("Status Code:", response.status)
+            body = await response.json()
 
     return body
 
@@ -38,20 +33,14 @@ async def retrieve_story(story_id: int, retry=True) -> dict:
 async def fetch_part_content(part_id: int) -> str:
     """Return the HTML Content of a Part."""
     async with CachedSession(headers=headers, cache=cache) as session:
-        try:
-            async with session.get(
-                f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
-            ) as response:
-                if not response.ok:
-                    if response.status in [404, 400]:
-                        return ""
-                    raise ValueError("Status Code:", response.status)
-                body = await response.text()
-        except ValueError:
-            if not retry:
-                raise asyncio.TimeoutError()
-            await asyncio.sleep(15)
-            return await fetch_part_content(story_id, retry=False)
+        async with session.get(
+            f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
+        ) as response:
+            if not response.ok:
+                if response.status in [404, 400]:
+                    return ""
+                raise ValueError("Status Code:", response.status)
+            body = await response.text()
 
     return body
 
@@ -59,18 +48,12 @@ async def fetch_part_content(part_id: int) -> str:
 async def fetch_cover(url: str) -> bytes:
     """Fetch image bytes."""
     async with CachedSession(headers=headers, cache=cache) as session:
-        try:
-            async with session.get(url) as response:
-                if not response.ok:
-                    if response.status in [404, 400]:
-                        return bytes()
-                    raise ValueError("Status Code:", response.status)
-                body = await response.read()
-        except ValueError:
-            if not retry:
-                raise asyncio.TimeoutError()
-            await asyncio.sleep(15)
-            return await fetch_part_content(story_id, retry=False)
+        async with session.get(url) as response:
+            if not response.ok:
+                if response.status in [404, 400]:
+                    return bytes()
+                raise ValueError("Status Code:", response.status)
+            body = await response.read()
 
     return body
 
