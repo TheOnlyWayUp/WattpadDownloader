@@ -1,6 +1,7 @@
 <script>
   let story_id = "";
   let download_images = false;
+  let after_download_page = false;
 </script>
 
 <div>
@@ -8,66 +9,97 @@
     <div
       class="hero-content flex-col lg:flex-row-reverse glass p-16 rounded shadow-sm"
     >
-      <div class="text-center lg:text-left lg:p-10">
-        <h1
-          class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
-        >
-          Wattpad Downloader
-        </h1>
-        <p class="pt-6 text-lg">
-          Download your favourite books with a single click!
-        </p>
-        <ul class="pt-4 list list-inside text-xl">
-          <li>06/24 - 🎉 Image Downloading!</li>
-        </ul>
-      </div>
-      <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
-        <form class="card-body">
-          <div class="form-control">
-            <input
-              type="number"
-              placeholder="Story ID"
-              class="input input-bordered"
-              bind:value={story_id}
-              required
-              name="story_id"
-            />
-            <label class="label" for="story_id">
-              <button
-                class="label-text link"
-                onclick="StoryIDTutorialModal.showModal()"
-                data-umami-event="StoryIDTutorialModal Open"
-                >How to get a Story ID</button
-              >
-            </label>
-          </div>
-
-          <div class="form-control mt-6">
-            <a
-              class="btn btn-primary rounded-l-none"
-              class:btn-disabled={!story_id}
-              href={`/download/${story_id}${download_images ? "?download_images=true" : ""}`}
-              data-umami-event="Download"
-              download
-              onclick="AfterDownloadModal.showModal()">Download</a
-            >
-            <label class="cursor-pointer label">
-              <span class="label-text"
-                >Include Images (<strong>Slower Download</strong>)</span
-              >
+      {#if !after_download_page}
+        <div class="text-center lg:text-left lg:p-10">
+          <h1
+            class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
+          >
+            Wattpad Downloader
+          </h1>
+          <p class="pt-6 text-lg">
+            Download your favourite books with a single click!
+          </p>
+          <ul class="pt-4 list list-inside text-xl">
+            <li>06/24 - 🎉 Image Downloading!</li>
+          </ul>
+        </div>
+        <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
+          <form class="card-body">
+            <div class="form-control">
               <input
-                type="checkbox"
-                class="checkbox checkbox-warning shadow-md"
-                bind:checked={download_images}
+                type="number"
+                placeholder="Story ID"
+                class="input input-bordered"
+                bind:value={story_id}
+                required
+                name="story_id"
               />
-            </label>
-          </div>
-        </form>
+              <label class="label" for="story_id">
+                <button
+                  class="label-text link"
+                  onclick="StoryIDTutorialModal.showModal()"
+                  data-umami-event="StoryIDTutorialModal Open"
+                  >How to get a Story ID</button
+                >
+              </label>
+            </div>
 
-        <button data-feedback-fish class="link pb-4" data-umami-event="Feedback"
-          >Feedback</button
-        >
-      </div>
+            <div class="form-control mt-6">
+              <a
+                class="btn btn-primary rounded-l-none"
+                class:btn-disabled={!story_id}
+                data-umami-event="Download"
+                href={`/download/${story_id}${download_images ? "?download_images=true" : ""}`}
+                download
+                on:click={() => (after_download_page = true)}>Download</a
+              >
+              <label class="cursor-pointer label">
+                <span class="label-text"
+                  >Include Images (<strong>Slower Download</strong>)</span
+                >
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-warning shadow-md"
+                  bind:checked={download_images}
+                />
+              </label>
+            </div>
+          </form>
+
+          <button
+            data-feedback-fish
+            class="link pb-4"
+            data-umami-event="Feedback">Feedback</button
+          >
+        </div>
+      {:else}
+        <div class="text-center max-w-4xl">
+          <h1 class="font-bold text-3xl">
+            Your download has <span
+              class="text-transparent bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
+              >Started</span
+            >
+          </h1>
+          <div class="py-4 space-y-2">
+            <p class="text-2xl">
+              If you found this site useful, please consider <a
+                href="https://github.com/TheOnlyWayUp/WattpadDownloader"
+                target="_blank"
+                class="link"
+                data-umami-event="Star">starring the project</a
+              > to support WattpadDownloader.
+            </p>
+            <p class="text-lg pt-2">
+              You can also join us on <a
+                href="https://discord.gg/P9RHC4KCwd"
+                target="_blank"
+                class="link"
+                data-umami-event="Discord">discord</a
+              >, where we release features early and discuss updates.
+            </p>
+          </div>
+        </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -105,46 +137,6 @@
   <form method="dialog" class="modal-backdrop">
     <button>close</button>
   </form>
-</dialog>
-
-<dialog id="AfterDownloadModal" class="modal">
-  <div class="modal-box">
-    <h3 class="font-bold text-lg">Your download has started</h3>
-    <div class="py-4 space-y-2">
-      <p class="text-xl">
-        Hi, thanks for using my site! If you found it useful, please consider <a
-          href="https://github.com/TheOnlyWayUp/WattpadDownloader"
-          target="_blank"
-          class="link"
-          data-umami-event="Star">starring the project</a
-        > to support WattpadDownloader.
-      </p>
-      <p>
-        You can also join us on <a
-          href="https://discord.gg/P9RHC4KCwd"
-          target="_blank"
-          class="link"
-          data-umami-event="Discord">discord</a
-        >, where we release features early and discuss updates.
-      </p>
-      <p class="text-lg">
-        Please take a look at <a
-          href="https://rambhat.la"
-          class="link"
-          data-umami-event="My Work">my work</a
-        >!
-      </p>
-    </div>
-    <div class="pt-2">
-      <form method="dialog">
-        <!-- if there is a button in form, it will close the modal -->
-        <button
-          class="btn w-full btn-sm btn-ghost"
-          data-umami-event="AfterDownloadModal Close">Close</button
-        >
-      </form>
-    </div>
-  </div>
 </dialog>
 
 <footer
