@@ -174,7 +174,7 @@ async def add_chapters(
 ):
     chapters = []
 
-    for part in data["parts"]:
+    for cidx, part in enumerate(data["parts"]):
         content = await fetch_part_content(part["id"], cookies=cookies)
         title = part["title"]
         clean_title = slugify(title)
@@ -182,7 +182,7 @@ async def add_chapters(
         # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
         chapter = epub.EpubHtml(
             title=title,
-            file_name=f"{clean_title}.xhtml",
+            file_name=f"{cidx}.xhtml",  # Used to be clean_title.xhtml, but that broke Arabic support as slugify turns arabic strings into '', leading to multiple files with the same name, breaking those chapters.
             lang=data["language"]["name"],
         )
 
@@ -200,11 +200,11 @@ async def add_chapters(
                         img = epub.EpubImage(
                             media_type="image/jpeg",
                             content=await response.read(),
-                            file_name=f"static/{clean_title}/{idx}.jpeg",
+                            file_name=f"static/{cidx}/{idx}.jpeg",
                         )
                         book.add_item(img)
                         content = content.replace(
-                            str(image), f'<img src="static/{clean_title}/{idx}.jpeg"/>'
+                            str(image), f'<img src="static/{cidx}/{idx}.jpeg"/>'
                         )
 
         chapter.set_content(f"<h1>{title}</h1>" + content)
