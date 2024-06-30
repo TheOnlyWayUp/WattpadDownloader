@@ -1,8 +1,16 @@
+from typing import Optional
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from ebooklib import epub
-from create_book import retrieve_story, set_cover, set_metadata, add_chapters, slugify
+from create_book import (
+    retrieve_story,
+    set_cover,
+    set_metadata,
+    add_chapters,
+    slugify,
+    wp_get_cookies,
+)
 import tempfile
 from io import BytesIO
 from fastapi.staticfiles import StaticFiles
@@ -17,29 +25,47 @@ def home():
 
 
 @app.get("/download/{story_id}")
-async def download_book(story_id: int, download_images: bool = False):
-    data = await retrieve_story(story_id)
+async def download_book(
+    story_id: int,
+    download_images: bool = False,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+):
+    if username and not password or password and not username:
+        return HTMLResponse(
+            status_code=422,
+            content='Include both the username _and_ password, or neither. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+        )
+
+    if username and password:
+        try:
+            cookies = await wp_get_cookies(username=username, password=password)
+        except ValueError:
+            return HTMLResponse(
+                status_code=403,
+                content='Incorrect Username and/or Password. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
+    else:
+        cookies = None
+
+    data = await retrieve_story(story_id, cookies=cookies)
     book = epub.EpubBook()
 
-    # Metadata and Cover are updated
     try:
         set_metadata(book, data)
     except KeyError:
-        # raise HTTPException(
-        #     status_code=404,
-        #     detail='Story not found. Check the ID - Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-        # )
-        # return FileResponse(BUILD_PATH / "index.html", status_code=404)
         return HTMLResponse(
             status_code=404,
             content='Story not found. Check the ID - Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
         )
 
-    await set_cover(book, data)
+    await set_cover(book, data, cookies=cookies)
     # print("Metadata Downloaded")
 
     # Chapters are downloaded
-    async for title in add_chapters(book, data, download_images=download_images):
+    async for title in add_chapters(
+        book, data, download_images=download_images, cookies=cookies
+    ):
         # print(f"Part ({title}) downloaded")
         ...
 
