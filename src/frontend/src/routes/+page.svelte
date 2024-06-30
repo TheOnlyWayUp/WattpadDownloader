@@ -1,13 +1,32 @@
 <script>
   let story_id = "";
   let download_images = false;
+  let is_paid_story = false;
+  let credentials = {
+    username: "",
+    password: "",
+  };
+
   let after_download_page = false;
+  let url = "";
+
+  let button_disabled = false;
+  $: button_disabled =
+    !story_id ||
+    (is_paid_story && !(credentials.username && credentials.password));
+
+  $: url =
+    `/download/${story_id}?om=1` +
+    (download_images ? "&download_images=true" : "") +
+    (is_paid_story
+      ? `&username=${credentials.username}&password=${credentials.password}`
+      : "");
 </script>
 
 <div>
   <div class="hero min-h-screen">
     <div
-      class="hero-content flex-col lg:flex-row-reverse glass p-16 rounded shadow-sm"
+      class="hero-content flex-col lg:flex-row-reverse bg-base-100/50 p-16 rounded shadow-sm"
     >
       {#if !after_download_page}
         <div class="text-center lg:text-left lg:p-10">
@@ -36,22 +55,57 @@
               />
               <label class="label" for="story_id">
                 <button
-                  class="label-text link"
+                  class="label-text link font-semibold"
                   onclick="StoryIDTutorialModal.showModal()"
                   data-umami-event="StoryIDTutorialModal Open"
                   >How to get a Story ID</button
                 >
               </label>
+              <label class="cursor-pointer label">
+                <span class="label-text"
+                  >This is a Paid Story, and I've purchased it</span
+                >
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-warning shadow-md"
+                  bind:checked={is_paid_story}
+                />
+              </label>
+              {#if is_paid_story}
+                <label class="input input-bordered flex items-center gap-2">
+                  Username
+                  <input
+                    type="text"
+                    class="grow"
+                    name="username"
+                    placeholder="foxtail.chicken"
+                    bind:value={credentials.username}
+                    required
+                  />
+                </label>
+                <label class="input input-bordered flex items-center gap-2">
+                  Password
+                  <input
+                    type="password"
+                    class="grow"
+                    placeholder="supersecretpassword"
+                    name="password"
+                    bind:value={credentials.password}
+                    required
+                  />
+                </label>
+              {/if}
             </div>
 
             <div class="form-control mt-6">
               <a
                 class="btn btn-primary rounded-l-none"
-                class:btn-disabled={!story_id}
+                class:btn-disabled={button_disabled}
                 data-umami-event="Download"
-                href={`/download/${story_id}${download_images ? "?download_images=true" : ""}`}
+                href={url}
                 on:click={() => (after_download_page = true)}>Download</a
               >
+
               <label class="cursor-pointer label">
                 <span class="label-text"
                   >Include Images (<strong>Slower Download</strong>)</span
