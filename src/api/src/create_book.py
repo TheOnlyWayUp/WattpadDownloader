@@ -36,7 +36,7 @@ async def wp_get_cookies(username: str, password: str) -> dict:
     """
     async with ClientSession(headers=headers) as session:
         async with session.post(
-            "https://www.wattpad.com/auth/login?nextUrl=%2F&_data=routes%2Fauth%2Flogin",
+            "https://www.wattpad.com/auth/login?nextUrl=%2F&_data=routes%2Fauth.login",
             data={
                 "username": username.lower(),
                 "password": password,
