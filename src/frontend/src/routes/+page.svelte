@@ -39,7 +39,8 @@
             Download your favourite books with a single click!
           </p>
           <ul class="pt-4 list list-inside text-xl">
-            <li>06/24 - 🎉 Image Downloading!</li>
+            <li>06/24 - 🔑 Authenticated Downloads!</li>
+            <li>06/24 - 🖼️ Image Downloading!</li>
           </ul>
         </div>
         <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
