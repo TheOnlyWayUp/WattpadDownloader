@@ -39,6 +39,7 @@
             Download your favourite books with a single click!
           </p>
           <ul class="pt-4 list list-inside text-xl">
+            <li>07/24 - 🔡 RTL Language support! (Arabic, etc.)</li>
             <li>06/24 - 🔑 Authenticated Downloads!</li>
             <li>06/24 - 🖼️ Image Downloading!</li>
           </ul>
