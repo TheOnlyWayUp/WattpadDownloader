@@ -1,9 +1,10 @@
 import asyncio
+from typing import Optional
 from ebooklib import epub
 import unicodedata
 import re
 import backoff
-from aiohttp import ClientResponseError
+from aiohttp import ClientResponseError, ClientSession
 from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend
 from bs4 import BeautifulSoup
@@ -13,59 +14,46 @@ headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
 }
 
-cache = FileBackend(
-    use_temp=True,
-    expire_after=43200,  # 12 hours
-)
+cache = FileBackend(use_temp=True, expire_after=43200)  # 12 hours
+
+# --- Utilities --- #
 
 
-@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def retrieve_story(story_id: int, retry=True) -> dict:
-    """Taking a story_id, return its information from the Wattpad API."""
-    async with CachedSession(headers=headers, cache=cache) as session:
-        async with session.get(
-            f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
+async def wp_get_cookies(username: str, password: str) -> dict:
+    # source: https://github.com/TheOnlyWayUp/WP-DM-Export/blob/dd4c7c51cb43f2108e0f63fc10a66cd24a740e4e/src/API/src/main.py#L25-L58
+    """Retrieves authorization cookies from Wattpad by logging in with user creds.
+
+    Args:
+        username (str): Username.
+        password (str): Password.
+
+    Raises:
+        ValueError: Bad status code.
+        ValueError: No cookies returned.
+
+    Returns:
+        dict: Authorization cookies.
+    """
+    async with ClientSession(headers=headers) as session:
+        async with session.post(
+            "https://www.wattpad.com/auth/login?nextUrl=%2F&_data=routes%2Fauth%2Flogin",
+            data={
+                "username": username.lower(),
+                "password": password,
+            },  # the username.lower() is for caching
         ) as response:
-            if not response.ok:
-                if response.status in [404, 400]:
-                    return {}
-            response.raise_for_status()
+            if response.status != 204:
+                raise ValueError("Not a 204.")
 
-            body = await response.json()
+            cookies = {
+                k: v.value
+                for k, v in response.cookies.items()  # Thanks https://stackoverflow.com/a/32281245
+            }
 
-    return body
+            if not cookies:
+                raise ValueError("No cookies.")
 
-
-@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def fetch_part_content(part_id: int) -> str:
-    """Return the HTML Content of a Part."""
-    async with CachedSession(headers=headers, cache=cache) as session:
-        async with session.get(
-            f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
-        ) as response:
-            if not response.ok:
-                if response.status in [404, 400]:
-                    return ""
-            response.raise_for_status()
-
-            body = await response.text()
-
-    return body
-
-
-@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def fetch_cover(url: str) -> bytes:
-    """Fetch image bytes."""
-    async with CachedSession(headers=headers, cache=cache) as session:
-        async with session.get(url) as response:
-            if not response.ok:
-                if response.status in [404, 400]:
-                    return bytes()
-            response.raise_for_status()
-
-            body = await response.read()
-
-    return body
+            return cookies
 
 
 def slugify(value, allow_unicode=False) -> str:
@@ -91,7 +79,71 @@ def slugify(value, allow_unicode=False) -> str:
     return re.sub(r"[-\s]+", "-", value).strip("-_")
 
 
-# --- #
+# --- API Calls --- #
+
+
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> dict:
+    """Taking a story_id, return its information from the Wattpad API."""
+    async with (
+        CachedSession(headers=headers, cache=cache)
+        if not cookies
+        else ClientSession(headers=headers, cookies=cookies)
+    ) as session:  # Don't cache requests with Cookies.
+        async with session.get(
+            f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
+        ) as response:
+            if not response.ok:
+                if response.status in [404, 400]:
+                    return {}
+            response.raise_for_status()
+
+            body = await response.json()
+
+    return body
+
+
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def fetch_part_content(part_id: int, cookies: Optional[dict] = None) -> str:
+    """Return the HTML Content of a Part."""
+    async with (
+        CachedSession(headers=headers, cache=cache)
+        if not cookies
+        else ClientSession(headers=headers, cookies=cookies)
+    ) as session:  # Don't cache requests with Cookies.
+        async with session.get(
+            f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
+        ) as response:
+            if not response.ok:
+                if response.status in [404, 400]:
+                    return ""
+            response.raise_for_status()
+
+            body = await response.text()
+
+    return body
+
+
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def fetch_cover(url: str, cookies: Optional[dict] = None) -> bytes:
+    """Fetch image bytes."""
+    async with (
+        CachedSession(headers=headers, cache=cache)
+        if not cookies
+        else ClientSession(headers=headers, cookies=cookies)
+    ) as session:  # Don't cache requests with Cookies.
+        async with session.get(url) as response:
+            if not response.ok:
+                if response.status in [404, 400]:
+                    return bytes()
+            response.raise_for_status()
+
+            body = await response.read()
+
+    return body
+
+
+# --- EPUB Generation --- #
 
 
 def set_metadata(book, data):
@@ -113,15 +165,17 @@ def set_metadata(book, data):
     )
 
 
-async def set_cover(book, data):
-    book.set_cover("cover.jpg", await fetch_cover(data["cover"]))
+async def set_cover(book, data, cookies: Optional[dict] = None):
+    book.set_cover("cover.jpg", await fetch_cover(data["cover"], cookies=cookies))
 
 
-async def add_chapters(book, data, download_images: bool = False):
+async def add_chapters(
+    book, data, download_images: bool = False, cookies: Optional[dict] = None
+):
     chapters = []
 
     for part in data["parts"]:
-        content = await fetch_part_content(part["id"])
+        content = await fetch_part_content(part["id"], cookies=cookies)
         title = part["title"]
         clean_title = slugify(title)
 
@@ -134,7 +188,11 @@ async def add_chapters(book, data, download_images: bool = False):
 
         if download_images:
             soup = BeautifulSoup(content, "lxml")
-            async with CachedSession(cache=cache, headers=headers) as session:
+            async with (
+                CachedSession(headers=headers, cache=cache)
+                if not cookies
+                else ClientSession(headers=headers, cookies=cookies)
+            ) as session:  # Don't cache requests with Cookies.
                 for idx, image in enumerate(soup.find_all("img")):
                     if not image["src"]:
                         continue
