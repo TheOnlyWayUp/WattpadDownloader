@@ -16,7 +16,8 @@
     !story_url ||
     (is_paid_story && !(credentials.username && credentials.password));
 
-  $: if (!/\D/.test(story_url)) { //check if story_url is only numbers
+  $: if (!/\D/.test(story_url)) {
+    //check if story_url is only numbers
     story_id = story_url; //I don't know how to tell story and part IDs apart... so if a part ID is given it'll just error out and say "Story not found. Check the ID"
   } else {
     story_id = story_url.slice(
@@ -70,7 +71,7 @@
                   class="label-text link font-semibold"
                   onclick="StoryIDTutorialModal.showModal()"
                   data-umami-event="StoryIDTutorialModal Open"
-                  >How to get a Story ID</button
+                  >How to get a Story URL</button
                 >
               </label>
               <label class="cursor-pointer label">
@@ -182,22 +183,20 @@
     <h3 class="font-bold text-lg">Downloading a Story</h3>
     <ol class="list list-disc list-inside py-4 space-y-2">
       <li>
-        Open the Story URL (For example, <span
-          class="font-mono bg-slate-100 p-1"
-          >wattpad.com/story/237369078-wattpad-books-presents</span
-        >)
+        Navigate the story description page with the cover, summary, tags, and
+        chapter list.
       </li>
-      <li>
-        Copy the numbers after the <span class="font-mono bg-slate-100 p-1"
-          >/</span
-        >
-        (In the example, that'd be,
-        <span class="font-mono bg-slate-100 p-1"
-          >wattpad.com/story/<span class="bg-amber-200 p-1">237369078</span
-          >-wattpad-books-presents</span
-        >)
-      </li>
-      <li>Paste the Story ID and hit Download!</li>
+      <div style="padding:20px;">
+        <li>
+          Copy the Story URL from the top of your browser (For example, <span
+            class="font-mono bg-slate-100 p-1"
+            >wattpad.com/story/237369078-wattpad-books-presents</span
+          >)
+        </li>
+        <b> OR </b>
+        <li>Click the share icon and select "Copy Link" in the app</li>
+      </div>
+      <li>Paste the Story URL and hit Download!</li>
     </ol>
   </div>
   <form method="dialog" class="modal-backdrop">
