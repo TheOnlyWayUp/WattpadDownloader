@@ -34,7 +34,7 @@ async def download_book(
     if username and not password or password and not username:
         return HTMLResponse(
             status_code=422,
-            content='Include both the username _and_ password, or neither. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            content='Include both the username <u>and</u> password, or neither. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
         )
 
     if username and password:
