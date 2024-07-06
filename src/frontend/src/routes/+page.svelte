@@ -19,7 +19,7 @@
     `/download/${story_id}?om=1` +
     (download_images ? "&download_images=true" : "") +
     (is_paid_story
-      ? `&username=${credentials.username}&password=${credentials.password}`
+      ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
       : "");
 </script>
 
