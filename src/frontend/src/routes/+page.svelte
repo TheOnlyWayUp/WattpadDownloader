@@ -1,4 +1,5 @@
 <script>
+  let story_url = "";
   let story_id = "";
   let download_images = false;
   let is_paid_story = false;
@@ -12,8 +13,17 @@
 
   let button_disabled = false;
   $: button_disabled =
-    !story_id ||
+    !story_url ||
     (is_paid_story && !(credentials.username && credentials.password));
+
+  $: if (!/\D/.test(story_url)) { //check if story_url is only numbers
+    story_id = story_url; //I don't know how to tell story and part IDs apart... so if a part ID is given it'll just error out and say "Story not found. Check the ID"
+  } else {
+    story_id = story_url.slice(
+      story_url.indexOf("story/") + 6,
+      story_url.indexOf("-"),
+    );
+  }
 
   $: url =
     `/download/${story_id}?om=1` +
@@ -48,14 +58,14 @@
           <form class="card-body">
             <div class="form-control">
               <input
-                type="number"
-                placeholder="Story ID"
+                type="text"
+                placeholder="Story URL"
                 class="input input-bordered"
-                bind:value={story_id}
+                bind:value={story_url}
                 required
-                name="story_id"
+                name="story_url"
               />
-              <label class="label" for="story_id">
+              <label class="label" for="story_url">
                 <button
                   class="label-text link font-semibold"
                   onclick="StoryIDTutorialModal.showModal()"
