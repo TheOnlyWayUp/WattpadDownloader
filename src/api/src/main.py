@@ -18,6 +18,13 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
 
+def extract_story_ID(link: str) -> int:
+    try:
+        return(int(link)) # check if it's already just a number
+    except(ValueError):
+        link=link[link.find("story")+5:] #remove everything before the story ID
+        link=link[:link.find("-")] #remove everything after the story ID
+        return(int(link))
 
 @app.get("/")
 def home():
@@ -26,11 +33,14 @@ def home():
 
 @app.get("/download/{story_id}")
 async def download_book(
-    story_id: int,
+    story_id: str,
     download_images: bool = False,
     username: Optional[str] = None,
     password: Optional[str] = None,
 ):
+
+    story_id=extract_story_ID(story_id)
+
     if username and not password or password and not username:
         return HTMLResponse(
             status_code=422,

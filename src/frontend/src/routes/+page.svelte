@@ -16,7 +16,7 @@
     (is_paid_story && !(credentials.username && credentials.password));
 
   $: url =
-    `/download/${story_id}?om=1` +
+    `/download/${story_id.replaceAll("/","")}?om=1` +
     (download_images ? "&download_images=true" : "") +
     (is_paid_story
       ? `&username=${credentials.username}&password=${credentials.password}`
@@ -48,7 +48,7 @@
           <form class="card-body">
             <div class="form-control">
               <input
-                type="number"
+                type="text"
                 placeholder="Story ID"
                 class="input input-bordered"
                 bind:value={story_id}
