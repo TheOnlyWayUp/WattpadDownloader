@@ -18,12 +18,19 @@
 
   $: if (!/\D/.test(story_url)) {
     //check if story_url is only numbers
-    story_id = story_url; //I don't know how to tell story and part IDs apart... so if a part ID is given it'll just error out and say "Story not found. Check the ID"
+    story_id = story_url;
   } else {
-    story_id = story_url.slice(
-      story_url.indexOf("story/") + 6,
-      story_url.indexOf("-"),
-    );
+    if (story_url.includes("story/")) {
+      story_id = story_url.slice(
+        story_url.indexOf("story/") + 6,
+        story_url.indexOf("-"),
+      );
+    } else {
+      story_id = story_url.slice(
+        story_url.indexOf("wattpad.com/") + 12,
+        story_url.indexOf("-"),
+      );
+    }
   }
 
   $: url =

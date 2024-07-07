@@ -10,6 +10,7 @@ from create_book import (
     add_chapters,
     slugify,
     wp_get_cookies,
+    fetch_story_ID,
 )
 import tempfile
 from io import BytesIO
@@ -54,10 +55,15 @@ async def download_book(
     try:
         set_metadata(book, data)
     except KeyError:
-        return HTMLResponse(
-            status_code=404,
-            content='Story not found. Check the ID - Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-        )
+        try:
+            story_id = await fetch_story_ID(story_id)
+            data = await retrieve_story(story_id, cookies=cookies)
+            set_metadata(book, data)
+        except KeyError:
+            return HTMLResponse(
+                status_code=404,
+                content='Story not found. Check the ID - Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
 
     await set_cover(book, data, cookies=cookies)
     # print("Metadata Downloaded")
