@@ -9,11 +9,12 @@ Stars ⭐ are appreciated. Thanks!
 
 ## Features
 - ⚡ Lightweight Frontend and Minimal Javascript.
+- 🪙 Supports Authentication (Download paid stories from your account!)
 - 🌐 API Support (Visit the `/docs` path on your instance for more.)
-- 🐇 Fast Generation, Basic Ratelimit Handling.
+- 🐇 Fast Generation, Ratelimit Handling.
 - 🐳 Docker Support
 - 🏷️ Generated EPUB File includes Metadata. (Dublin Core Spec)
-- 📖 Plays well with E-Readers. (Kindle Support if KOReader present)
+- 📖 Plays well with E-Readers. (Kindle Support if KOReader present, ReMarkable, KOBO, ...)
 - 💻 Easily Hackable. Extend with ease.
 
 
@@ -31,5 +32,5 @@ My thanks to [aerkalov/ebooklib](https://github.com/aerkalov/ebooklib) for a fas
 ---
 
 <div align="center">
-    <p>TheOnlyWayUp © 2023</p>
+    <p>TheOnlyWayUp © 2024</p>
 </div>
