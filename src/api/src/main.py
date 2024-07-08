@@ -38,6 +38,7 @@ async def download_book(
         )
 
     if username and password:
+        # username and password are URL-Encoded by the frontend. FastAPI automatically decodes them.
         try:
             cookies = await wp_get_cookies(username=username, password=password)
         except ValueError:
