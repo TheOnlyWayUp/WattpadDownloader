@@ -151,6 +151,7 @@ async def fetch_story_ID(part_id: int, cookies: Optional[dict] = None) -> int:
         if not cookies
         else ClientSession(headers=headers, cookies=cookies)
     ) as session:  # Don't cache requests with Cookies.
+        #Find the full Part URL given the Part ID
         async with session.get(
             f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url"
         ) as response:
@@ -162,7 +163,8 @@ async def fetch_story_ID(part_id: int, cookies: Optional[dict] = None) -> int:
             part_url = await response.text()
             part_url = part_url[part_url.find("https") :]
             part_url = part_url[: part_url.find('"')].replace("\\", "")
-            body = part_url
+
+        #Find the Story ID given the Part URL
         async with session.get(part_url) as response:
             if not response.ok:
                 if response.status in [404, 400]:
