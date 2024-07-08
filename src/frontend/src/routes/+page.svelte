@@ -39,6 +39,7 @@
             Download your favourite books with a single click!
           </p>
           <ul class="pt-4 list list-inside text-xl">
+            <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
             <li>07/24 - 🔡 RTL Language support! (Arabic, etc.)</li>
             <li>06/24 - 🔑 Authenticated Downloads!</li>
             <li>06/24 - 🖼️ Image Downloading!</li>
