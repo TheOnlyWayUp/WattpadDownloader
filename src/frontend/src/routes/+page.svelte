@@ -6,21 +6,42 @@
     username: "",
     password: "",
   };
-
   let after_download_page = false;
   let url = "";
+
+  let raw_story_id = "";
+  let is_part_id = false;
 
   let button_disabled = false;
   $: button_disabled =
     !story_id ||
     (is_paid_story && !(credentials.username && credentials.password));
 
-  $: url =
-    `/download/${story_id}?om=1` +
-    (download_images ? "&download_images=true" : "") +
-    (is_paid_story
-      ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
-      : "");
+  $: {
+    is_part_id = false;
+    if (raw_story_id.includes("wattpad.com")) {
+      // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
+      // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. There isn't a direct API for this.
+
+      if (raw_story_id.includes("/story/")) {
+        // https://wattpad.com/story/237369078-wattpad-books-presents
+        story_id = raw_story_id.split("/story/")[1].split("-")[0];
+        raw_story_id = story_id;
+      } else if (raw_story_id.includes("/stories/")) {
+        // https://www.wattpad.com/api/v3/stories/237369078?fields=...
+        story_id = raw_story_id.split("/stories/")[1].split("?")[0];
+        raw_story_id = story_id;
+      } else {
+        // https://www.wattpad.com/939051741-wattpad-books-presents-part-name
+        is_part_id = true;
+        raw_story_id = "";
+        story_id = "";
+      }
+    } else {
+      story_id = parseInt(raw_story_id) || ""; // parseInt returns NaN for undefined values.
+      raw_story_id = story_id;
+    }
+  }
 </script>
 
 <div>
@@ -49,20 +70,32 @@
           <form class="card-body">
             <div class="form-control">
               <input
-                type="number"
+                type="text"
                 placeholder="Story ID"
                 class="input input-bordered"
-                bind:value={story_id}
+                class:input-warning={is_part_id}
+                bind:value={raw_story_id}
                 required
                 name="story_id"
               />
               <label class="label" for="story_id">
-                <button
-                  class="label-text link font-semibold"
-                  onclick="StoryIDTutorialModal.showModal()"
-                  data-umami-event="StoryIDTutorialModal Open"
-                  >How to get a Story ID</button
-                >
+                {#if is_part_id}
+                  <p class=" text-red-500">
+                    Refer to (<button
+                      class="link font-semibold"
+                      onclick="StoryIDTutorialModal.showModal()"
+                      data-umami-event="Part StoryIDTutorialModal Open"
+                      >How to get a Story ID</button
+                    >).
+                  </p>
+                {:else}
+                  <button
+                    class="label-text link font-semibold"
+                    onclick="StoryIDTutorialModal.showModal()"
+                    data-umami-event="StoryIDTutorialModal Open"
+                    >How to get a Story ID</button
+                  >
+                {/if}
               </label>
               <label class="cursor-pointer label">
                 <span class="label-text"
@@ -170,13 +203,13 @@
         >✕</button
       >
     </form>
-    <h3 class="font-bold text-lg">Downloading a Story</h3>
-    <ol class="list list-disc list-inside py-4 space-y-2">
+    <h3 class="font-bold text-lg">Retrieving a Story ID</h3>
+    <ol class="list list-disc list-inside py-4 space-y-4">
       <li>
-        Open the Story URL (For example, <span
-          class="font-mono bg-slate-100 p-1"
+        Open the Story URL, this page includes the story description and tags.
+        (For example, <span class="font-mono bg-slate-100 p-1"
           >wattpad.com/story/237369078-wattpad-books-presents</span
-        >)
+        >).
       </li>
       <li>
         Copy the numbers after the <span class="font-mono bg-slate-100 p-1"
