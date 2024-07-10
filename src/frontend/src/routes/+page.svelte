@@ -17,6 +17,13 @@
     !story_id ||
     (is_paid_story && !(credentials.username && credentials.password));
 
+  $: url =
+    `/download/${story_id}?om=1` +
+    (download_images ? "&download_images=true" : "") +
+    (is_paid_story
+      ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
+      : "");
+
   $: {
     is_part_id = false;
     if (raw_story_id.includes("wattpad.com")) {
