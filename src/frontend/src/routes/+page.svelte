@@ -32,11 +32,11 @@
 
       if (raw_story_id.includes("/story/")) {
         // https://wattpad.com/story/237369078-wattpad-books-presents
-        story_id = raw_story_id.split("/story/")[1].split("-")[0];
+        story_id = raw_story_id.split("/story/")[1].split("-")[0].split("?")[0]; // removes tracking fields
         raw_story_id = story_id;
       } else if (raw_story_id.includes("/stories/")) {
         // https://www.wattpad.com/api/v3/stories/237369078?fields=...
-        story_id = raw_story_id.split("/stories/")[1].split("?")[0];
+        story_id = raw_story_id.split("/stories/")[1].split("?")[0]; // removes params
         raw_story_id = story_id;
       } else {
         // https://www.wattpad.com/939051741-wattpad-books-presents-part-name
