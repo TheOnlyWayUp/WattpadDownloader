@@ -194,7 +194,10 @@
               >, where we release features early and discuss updates.
             </p>
           </div>
-          <a href="/" class="btn btn-outline btn-lg mt-10">Download More</a>
+          <a
+            on:click={() => (window.location.href = window.location.href)}
+            class="btn btn-outline btn-lg mt-10">Download More</a
+          >
         </div>
       {/if}
     </div>
