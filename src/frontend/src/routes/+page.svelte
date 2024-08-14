@@ -49,6 +49,13 @@
       raw_story_id = story_id;
     }
   }
+
+  function reset() {
+    after_download_page = false;
+    story_id = "";
+    raw_story_id = "";
+    is_paid_story = false;
+  }
 </script>
 
 <div>
@@ -194,7 +201,9 @@
               >, where we release features early and discuss updates.
             </p>
           </div>
-          <a href="/" class="btn btn-outline btn-lg mt-10">Download More</a>
+          <a on:click={() => reset()} class="btn btn-outline btn-lg mt-10"
+            >Download More</a
+          >
         </div>
       {/if}
     </div>
