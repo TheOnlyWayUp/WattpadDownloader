@@ -194,7 +194,13 @@
               >, where we release features early and discuss updates.
             </p>
           </div>
-          <a href="/" class="btn btn-outline btn-lg mt-10">Download More</a>
+          <button
+            on:click={() => {
+              after_download_page = false;
+              raw_story_id = "";
+            }}
+            class="btn btn-outline btn-lg mt-10">Download More</button
+          >
         </div>
       {/if}
     </div>
