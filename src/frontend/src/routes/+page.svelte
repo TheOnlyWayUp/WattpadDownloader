@@ -49,13 +49,6 @@
       raw_story_id = story_id;
     }
   }
-
-  function reset() {
-    after_download_page = false;
-    story_id = "";
-    raw_story_id = "";
-    is_paid_story = false;
-  }
 </script>
 
 <div>
@@ -201,8 +194,12 @@
               >, where we release features early and discuss updates.
             </p>
           </div>
-          <a on:click={() => reset()} class="btn btn-outline btn-lg mt-10"
-            >Download More</a
+          <button
+            on:click={() => {
+              after_download_page = false;
+              raw_story_id = "";
+            }}
+            class="btn btn-outline btn-lg mt-10">Download More</button
           >
         </div>
       {/if}
