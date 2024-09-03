@@ -51,10 +51,12 @@
   }
 </script>
 
+<slot></slot>
+
 <div>
   <div class="hero min-h-screen">
     <div
-      class="hero-content flex-col lg:flex-row-reverse bg-base-100/50 p-16 rounded shadow-sm"
+      class="hero-content flex-col lg:flex-row-reverse light:bg-base-100/50 dark:bg-[hsl(39,20%,5%)]/30 p-16 rounded shadow-sm"
     >
       {#if !after_download_page}
         <div class="text-center lg:text-left lg:p-10">
@@ -63,23 +65,28 @@
           >
             Wattpad Downloader
           </h1>
-          <p class="pt-6 text-lg">
+          <p class="pt-4 text-xl dark:text-white">
             Download your favourite books with a single click!
           </p>
-          <ul class="pt-4 list list-inside text-xl">
+          <ul
+            class="pt-6 list list-inside text-xl dark:text-[hsl(133,13%,85%)] text-left"
+          >
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
-            <li>07/24 - 🔡 RTL Language support! (Arabic, etc.)</li>
-            <li>06/24 - 🔑 Authenticated Downloads!</li>
-            <li>06/24 - 🖼️ Image Downloading!</li>
+            <li>08 '24 - 🌙 Dark Mode</li>
+            <li>07 '24 - 🔡 RTL Language support! (Arabic, etc.)</li>
+            <li>06 '24 - 🔑 Authenticated Downloads!</li>
+            <li>06 '24 - 🖼️ Image Downloading!</li>
           </ul>
         </div>
-        <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
+        <div
+          class="card shrink-0 w-full max-w-sm shadow-2xl light:bg-base-100 dark:bg-[hsl(133,15%,9%)] dark:shadow-[0px_0px_150px_-100px_hsl(39,100%,50%)]"
+        >
           <form class="card-body">
             <div class="form-control">
               <input
                 type="text"
                 placeholder="Story ID"
-                class="input input-bordered"
+                class="input input-bordered dark:text-white"
                 class:input-warning={is_part_id}
                 bind:value={raw_story_id}
                 required
@@ -87,7 +94,7 @@
               />
               <label class="label" for="story_id">
                 {#if is_part_id}
-                  <p class=" text-red-500">
+                  <p class="text-red-500">
                     Refer to (<button
                       class="link font-semibold"
                       onclick="StoryIDTutorialModal.showModal()"
@@ -115,35 +122,38 @@
                 />
               </label>
               {#if is_paid_story}
-                <label class="input input-bordered flex items-center gap-2">
-                  Username
-                  <input
-                    type="text"
-                    class="grow"
-                    name="username"
-                    placeholder="foxtail.chicken"
-                    bind:value={credentials.username}
-                    required
-                  />
-                </label>
-                <label class="input input-bordered flex items-center gap-2">
-                  Password
-                  <input
-                    type="password"
-                    class="grow"
-                    placeholder="supersecretpassword"
-                    name="password"
-                    bind:value={credentials.password}
-                    required
-                  />
-                </label>
+                <div class="grid grid-rows-2 gap-y-1">
+                  <label class="input input-bordered flex items-center gap-2">
+                    <span class="label-text">Username</span>
+                    <input
+                      type="text"
+                      class="grow dark:text-white in_input p-1 rounded"
+                      name="username"
+                      placeholder="foxtail.chicken"
+                      bind:value={credentials.username}
+                      required
+                    />
+                  </label>
+                  <label class="input input-bordered flex items-center gap-2">
+                    <span class="label-text">Password</span>
+                    <input
+                      type="password"
+                      class="grow dark:text-white in_input p-1 rounded"
+                      placeholder="supersecretpassword"
+                      name="password"
+                      bind:value={credentials.password}
+                      required
+                    />
+                  </label>
+                </div>
               {/if}
             </div>
 
             <div class="form-control mt-6">
               <a
-                class="btn btn-primary rounded-l-none"
+                class="btn light:btn-primary dark:btn-accent"
                 class:btn-disabled={button_disabled}
+                class:disabled={button_disabled}
                 data-umami-event="Download"
                 href={url}
                 on:click={() => (after_download_page = true)}>Download</a
@@ -164,7 +174,7 @@
 
           <button
             data-feedback-fish
-            class="link pb-4"
+            class="link pb-4 label-text"
             data-umami-event="Feedback">Feedback</button
           >
         </div>
@@ -210,7 +220,7 @@
 <!-- Open the modal using ID.showModal() method -->
 
 <dialog id="StoryIDTutorialModal" class="modal">
-  <div class="modal-box">
+  <div class="modal-box dark:bg-[hsl(133,15%,9%)] dark:text-white/80">
     <form method="dialog">
       <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
         >✕</button
@@ -220,16 +230,19 @@
     <ol class="list list-disc list-inside py-4 space-y-4">
       <li>
         Open the Story URL, this page includes the story description and tags.
-        (For example, <span class="font-mono bg-slate-100 p-1"
+        (For example, <span
+          class="font-mono bg-slate-100 dark:bg-[hsl(133,40%,90%)]/90 text-black p-[5px] rounded"
           >wattpad.com/story/237369078-wattpad-books-presents</span
         >).
       </li>
       <li>
-        Copy the numbers after the <span class="font-mono bg-slate-100 p-1"
+        Copy the numbers after the <span
+          class="font-mono bg-slate-100 dark:bg-[hsl(133,40%,90%)]/90 text-black p-[5px] rounded"
           >/</span
         >
         (In the example, that'd be,
-        <span class="font-mono bg-slate-100 p-1"
+        <span
+          class="font-mono bg-slate-100 dark:bg-[hsl(133,40%,90%)]/90 text-black p-[5px] rounded"
           >wattpad.com/story/<span class="bg-amber-200 p-1">237369078</span
           >-wattpad-books-presents</span
         >)
