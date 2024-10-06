@@ -71,7 +71,8 @@
             <li>
               10/24 - 👾 Add the <a
                 href="https://discord.com/oauth2/authorize?client_id=1292173380065296395&permissions=274878285888&scope=bot%20applications.commands"
-                target="_blank">Discord Bot</a
+                target="_blank"
+                class="link underline">Discord Bot</a
               >!
             </li>
             <li>07/24 - 🔡 RTL Language support! (Arabic, etc.)</li>
