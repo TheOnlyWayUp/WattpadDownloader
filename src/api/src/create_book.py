@@ -204,7 +204,7 @@ async def add_chapters(
                         )
                         book.add_item(img)
                         content = content.replace(
-                            str(image), f'<img src="static/{cidx}/{idx}.jpeg"/>'
+                            str(image["src"]), f"static/{cidx}/{idx}.jpeg"
                         )
 
         chapter.set_content(f"<h1>{title}</h1>" + content)
