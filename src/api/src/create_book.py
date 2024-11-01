@@ -177,7 +177,6 @@ async def add_chapters(
     for cidx, part in enumerate(data["parts"]):
         content = await fetch_part_content(part["id"], cookies=cookies)
         title = part["title"]
-        clean_title = slugify(title)
 
         # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
         chapter = epub.EpubHtml(
@@ -188,6 +187,7 @@ async def add_chapters(
 
         if download_images:
             soup = BeautifulSoup(content, "lxml")
+
             async with (
                 CachedSession(headers=headers, cache=cache)
                 if not cookies
@@ -196,6 +196,8 @@ async def add_chapters(
                 for idx, image in enumerate(soup.find_all("img")):
                     if not image["src"]:
                         continue
+                    # Find all image tags and filter for those with sources
+
                     async with session.get(image["src"]) as response:
                         img = epub.EpubImage(
                             media_type="image/jpeg",
@@ -203,8 +205,10 @@ async def add_chapters(
                             file_name=f"static/{cidx}/{idx}.jpeg",
                         )
                         book.add_item(img)
+                        # Fetch image and pack
+
                         content = content.replace(
-                            str(image), f'<img src="static/{cidx}/{idx}.jpeg"/>'
+                            str(image["src"]), f"static/{cidx}/{idx}.jpeg"
                         )
 
         chapter.set_content(f"<h1>{title}</h1>" + content)

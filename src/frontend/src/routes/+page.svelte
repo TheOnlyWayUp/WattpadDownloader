@@ -68,6 +68,8 @@
           </p>
           <ul class="pt-4 list list-inside text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
+
+            <li>11/24 - ⚒️ Fix Image Downloads</li>
             <li>
               10/24 - 👾 Add the <a
                 href="https://discord.com/oauth2/authorize?client_id=1292173380065296395&permissions=274878285888&scope=bot%20applications.commands"
