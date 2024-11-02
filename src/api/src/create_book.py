@@ -149,8 +149,9 @@ async def fetch_cover(url: str, cookies: Optional[dict] = None) -> bytes:
 def set_metadata(book, data):
     book.add_author(data["user"]["username"])
 
+    book.add_metadata("DC", "title", data["title"])
     book.add_metadata("DC", "description", data["description"])
-    book.add_metadata("DC", "created", data["createDate"])
+    book.add_metadata("DC", "date", data["createDate"])
     book.add_metadata("DC", "modified", data["modifyDate"])
     book.add_metadata("DC", "language", data["language"]["name"])
 
@@ -167,6 +168,10 @@ def set_metadata(book, data):
 
 async def set_cover(book, data, cookies: Optional[dict] = None):
     book.set_cover("cover.jpg", await fetch_cover(data["cover"], cookies=cookies))
+    chapter = epub.EpubHtml(
+        file_name=f"titlepage.xhtml",  # Standard for cover page
+    )
+    chapter.set_content('<img src="cover.jpg">')
 
 
 async def add_chapters(
