@@ -9,9 +9,11 @@
   let after_download_page = false;
   let url = "";
   let is_list = false;
+  let is_part = false;
+  let is_story = false;
   let download_id = "";
 
-  let invalid_link = false;
+  let invalid_url = false;
 
   let button_disabled = false;
   $: button_disabled =
@@ -20,7 +22,9 @@
 
   $: url =
     `/download/` +
-    (is_list ? `list/` : `story/`) +
+    (is_story ? `story/` : ``) +
+    (is_part ? `part/` : ``) +
+    (is_list ? `list/` : ``) +
     download_id +
     `?om=1` +
     (download_images ? "&download_images=true" : "") +
@@ -29,30 +33,50 @@
       : "");
 
   $: {
-    invalid_link = false;
+    invalid_url = false;
     if (input_url.includes("wattpad.com")) {
       // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
       // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
 
       if (input_url.includes("/story/")) {
         // https://wattpad.com/story/237369078-wattpad-books-presents
-        input_url = input_url.split("-")[0]; // removes tracking fields
+        input_url = input_url.split("-")[0]; // removes tracking fields and title
         download_id = input_url.split("/story/")[1];
+        is_story = true;
+        is_part = false;
         is_list = false;
       } else if (input_url.includes("/stories/")) {
         // https://www.wattpad.com/api/v3/stories/237369078?fields=...
         input_url = input_url.split("?")[0]; // removes params
         download_id = input_url.split("/stories/")[1];
+        is_story = true;
+        is_part = false;
         is_list = false;
+      } else if (input_url.includes("/list/")) {
+        // https://www.wattpad.com/list/953734831--winter-2021-stay-tuned-
+        input_url = input_url.split("-")[0]; // removes tracking fields and title
+        download_id = input_url.split("/list/")[1];
+        is_story = false;
+        is_part = false;
+        is_list = true;
       } else {
         // https://www.wattpad.com/939051741-wattpad-books-presents-part-name
-        invalid_link = true;
-        download_id = "";
-        input_url = "";
+        input_url = input_url.split("-")[0]; // removes tracking fields and title
+        download_id = input_url.split("wattpad.com/")[1];
+        if (/^\d+$/.test(download_id)) {
+          // Tests if "wattpad.com/{download_id}" contains only numbers
+          is_story = false;
+          is_part = true;
+          is_list = false;
+        } else {
+          invalid_url = true;
+          input_url = "";
+          download_id = "";
+        }
       }
     } else {
       if (input_url != "") {
-        invalid_link = true;
+        invalid_url = true;
         download_id = "";
         input_url = "";
       }
@@ -99,13 +123,13 @@
                 type="text"
                 placeholder="Story URL"
                 class="input input-bordered"
-                class:input-warning={invalid_link}
+                class:input-warning={invalid_url}
                 bind:value={input_url}
                 required
                 name="input_url"
               />
               <label class="label" for="input_url">
-                {#if invalid_link}
+                {#if invalid_url}
                   <p class=" text-red-500">
                     Refer to (<button
                       class="link font-semibold"
@@ -244,12 +268,8 @@
           >wattpad.com/story/237369078-wattpad-books-presents</span
         >).
       </li>
-      <li>
-        The page should look like this:
-        <p><img loading="lazy" src="/example.webp" /></p>
-      </li>
       <li>Paste the Story URL and hit Download!</li>
-      <li>The downloader does NOT support Part URLs</li>
+      <li>The downloader also supports Part URLs and List URLs</li>
     </ol>
   </div>
   <form method="dialog" class="modal-backdrop">

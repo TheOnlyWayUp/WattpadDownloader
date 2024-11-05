@@ -99,6 +99,15 @@ async def download_list(
 ):
     print("LIST DOWNLOADING NOT IMPLEMENTED YET")
 
+@app.get("/download/part/{part_id}")
+async def download_list(
+    part_id: int,
+    download_images: bool = False,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+):
+    print("PART DOWNLOADING NOT IMPLEMENTED YET")
+
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
 
