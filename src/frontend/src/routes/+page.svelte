@@ -101,6 +101,7 @@
           </p>
           <ul class="pt-4 list list-inside text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
+            <li>11/24 - 📋 List and Part Support!</li>
             <li>11/24 - 📨 Send to Kindle Support!</li>
 
             <li>11/24 - ⚒️ Fix Image Downloads</li>
@@ -219,6 +220,13 @@
               >Started</span
             >
           </h1>
+          {#if is_list}<div>
+              <h1 class="font-bold text-xl">
+                Please Note: Lists can take a LONG time to download. Please be
+                patient.
+              </h1>
+            </div>
+          {/if}
           <div class="py-4 space-y-2">
             <p class="text-2xl">
               If you found this site useful, please consider <a
