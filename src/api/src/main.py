@@ -24,7 +24,7 @@ def home():
     return FileResponse(BUILD_PATH / "index.html")
 
 
-@app.get("/download/{story_id}")
+@app.get("/download/story/{story_id}")
 async def download_book(
     story_id: int,
     download_images: bool = False,
@@ -88,6 +88,16 @@ async def download_book(
             "Content-Disposition": f'attachment; filename="{slugify(data["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
         },
     )
+
+
+@app.get("/download/list/{list_id}")
+async def download_list(
+    list_id: int,
+    download_images: bool = False,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+):
+    print("LIST DOWNLOADING NOT IMPLEMENTED YET")
 
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
