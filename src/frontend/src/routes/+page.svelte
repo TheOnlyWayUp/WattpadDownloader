@@ -239,24 +239,32 @@
 
 <!-- Open the modal using ID.showModal() method -->
 
-<dialog id="StoryURLTutorialModal" class="modal">
+<dialog id="StoryIDTutorialModal" class="modal">
   <div class="modal-box">
     <form method="dialog">
       <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
         >✕</button
       >
     </form>
-    <h3 class="font-bold text-lg">Retrieving a Story URL</h3>
+    <h3 class="font-bold text-lg">Retrieving a Story ID</h3>
     <ol class="list list-disc list-inside py-4 space-y-4">
       <li>
-        Copy the URL of the story description page, this page includes the story
-        cover, description, chapter list, and tags. (For example, <span
-          class="font-mono bg-slate-100 p-1"
+        Open the Story URL, this page includes the story description and tags.
+        (For example, <span class="font-mono bg-slate-100 p-1"
           >wattpad.com/story/237369078-wattpad-books-presents</span
         >).
       </li>
-      <li>Paste the Story URL and hit Download!</li>
-      <li>The downloader also supports Part URLs and List URLs</li>
+      <li>
+        Copy the numbers after the <span class="font-mono bg-slate-100 p-1"
+          >/</span
+        >
+        (In the example, that'd be,
+        <span class="font-mono bg-slate-100 p-1"
+          >wattpad.com/story/<span class="bg-amber-200 p-1">237369078</span
+          >-wattpad-books-presents</span
+        >)
+      </li>
+      <li>Paste the Story ID and hit Download!</li>
     </ol>
   </div>
   <form method="dialog" class="modal-backdrop">
