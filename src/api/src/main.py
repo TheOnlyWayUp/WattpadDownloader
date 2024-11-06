@@ -25,7 +25,7 @@ headers = {
 }
 
 
-class URLType(Enum):
+class DownloadMode(Enum):
     story = "story"
     part = "part"
     collection = "collection"
@@ -40,7 +40,7 @@ def home():
 async def handle_download(
     download_id: int,
     download_images: bool = False,
-    mode: URLType = URLType.story,
+    mode: DownloadMode = DownloadMode.story,
     username: Optional[str] = None,
     password: Optional[str] = None,
 ):
@@ -64,17 +64,10 @@ async def handle_download(
         cookies = None
 
     match mode:
-        case URLType.story:
+        case DownloadMode.story:
             story_id = download_id
-        case URLType.part:
+        case DownloadMode.part:
             story_id = await fetch_story_id(download_id, cookies)
-        case URLType.collection:
-            raise NotImplementedError()
-        case _:
-            return HTMLResponse(
-                status_code=422,
-                content="Unsupported Type. Please attempt to download a story, part, or list",
-            )
 
     metadata = await retrieve_story(story_id, cookies)
     book = epub.EpubBook()

@@ -48,11 +48,6 @@
         input_url = input_url.split("?")[0].split("/stories/")[1]; // removes params
         download_id = input_url;
         mode = "story";
-      } else if (input_url.includes("/list/")) {
-        // https://www.wattpad.com/list/953734831--winter-2021-stay-tuned-
-        input_url = input_url.split("-")[0]; // removes tracking fields and title
-        download_id = input_url.split("/list/")[1];
-        mode = "collection";
       } else {
         // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
         input_url = input_url.split("-")[0].split("wattpad.com/")[1]; // removes tracking fields and title
