@@ -22,15 +22,15 @@
 
   $: url =
     `/download/` +
-    (is_story ? `story/` : ``) +
-    (is_part ? `part/` : ``) +
-    (is_list ? `list/` : ``) +
     download_id +
     `?om=1` +
     (download_images ? "&download_images=true" : "") +
     (is_paid_story
       ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
-      : "");
+      : "") +
+    (is_story ? "&mode=story" : "") +
+    (is_part ? "&mode=part" : "") +
+    (is_list ? "&mode=collection" : "");
 
   $: {
     invalid_url = false;

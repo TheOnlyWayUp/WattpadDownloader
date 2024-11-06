@@ -1,6 +1,7 @@
 from typing import Optional
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from enum import Enum
+from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from ebooklib import epub
 from create_book import (
@@ -25,16 +26,22 @@ headers = {
 }
 
 
+class URLType(Enum):
+    story = "story"
+    part = "part"
+    collection = "collection"
+
+
 @app.get("/")
 def home():
     return FileResponse(BUILD_PATH / "index.html")
 
 
-@app.get("/download/{type}/{download_id}")
+@app.get("/download/{download_id}")
 async def handle_download(
-    type: str,
     download_id: int,
     download_images: bool = False,
+    mode: URLType = URLType.story,
     username: Optional[str] = None,
     password: Optional[str] = None,
 ):
@@ -57,61 +64,36 @@ async def handle_download(
     else:
         cookies = None
 
-    try:
-        if type == "story":
-            data = await download_story(download_id, download_images, cookies)
-        elif type == "part":
-            data = await download_part(download_id, download_images, cookies)
-        elif type == "list":
-            data = await download_list(download_id, download_images, cookies)
-        else:
+    match mode:
+        case URLType.story:
+            ...
+        case URLType.part:
+            ...
+        case URLType.collection:
+            raise NotImplementedError()
+        case _:
             return HTMLResponse(
                 status_code=422,
                 content="Unsupported Type. Please attempt to download a story, part, or list",
             )
-    except ValueError:
-        # Invalid ID
-        return HTMLResponse(
-            status_code=404,
-            content='Invalid ID. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-            )
-    except ClientResponseError as exception:
-        if exception.status==429:
-            # Rate-limit by Wattpad
-            return HTMLResponse(
-            status_code=404,
-            content='Unfortunately, the downloader got rate-limited by Wattpad. Please try again later. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-            )
-        else:
-            # Unknown Error
-            return HTMLResponse(
-            status_code=404,
-            content='Something went wrong. HTTP ERROR. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-            )
-    except:
-        # Unknown Error
-        return HTMLResponse(
-        status_code=404,
-        content='Something went wrong. UNKNOWN ERROR. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-        )
 
-    if type == "story" or type == "part":
-        return StreamingResponse(
-            BytesIO(data["file"]),
-            media_type="application/epub+zip",
-            headers={
-                "Content-Disposition": f'attachment; filename="{slugify(data["metadata"]["title"])}_{data["metadata"]["id"]}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
-            },
-        )
+    # if mode is URLType.story or mode is URLType.part:
+    #     return StreamingResponse(
+    #         BytesIO(data["file"]),
+    #         media_type="application/epub+zip",
+    #         headers={
+    #             "Content-Disposition": f'attachment; filename="{slugify(data["metadata"]["title"])}_{data["metadata"]["id"]}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+    #         },
+    #     )
 
-    else:
-        return StreamingResponse(
-            data["file"],
-            media_type="application/zip",
-            headers={
-                "Content-Disposition": f'attachment; filename="{slugify(data["name"])}_{download_id}_{"images" if download_images else ""}.zip"'  # Thanks https://stackoverflow.com/a/72729058
-            },
-        )
+    # else:
+    #     return StreamingResponse(
+    #         data["file"],
+    #         media_type="application/zip",
+    #         headers={
+    #             "Content-Disposition": f'attachment; filename="{slugify(data["name"])}_{download_id}_{"images" if download_images else ""}.zip"'  # Thanks https://stackoverflow.com/a/72729058
+    #         },
+    #     )
 
 
 async def download_story(
@@ -129,9 +111,11 @@ async def download_part(
     cookies: Optional[dict] = None,
 ):
     # Get Story ID from Part ID
-    response = await get_url(f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId")
+    response = await get_url(
+        f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId"
+    )
     story_id = response["groupId"]
-    
+
     data = await download_epub(story_id, download_images, cookies)
     return data
 
@@ -142,29 +126,30 @@ async def download_list(
     cookies: Optional[dict] = None,
 ):
 
-    list_data = await get_url(f"https://www.wattpad.com/api/v3/lists/{list_id}?fields=name,stories(id)")
+    list_data = await get_url(
+        f"https://www.wattpad.com/api/v3/lists/{list_id}?fields=name,stories(id)"
+    )
 
     # Initialize a BytesIO buffer to store the zip file in memory
     zip_buffer = BytesIO()
 
-    with ZipFile(zip_buffer, 'w') as archive:
+    with ZipFile(zip_buffer, "w") as archive:
         for story in list_data["stories"]:
             story_id = story["id"]
-            
+
             # Download each story as an EPUB
             file_data = await download_epub(story_id, download_images, cookies)
-            
+
             # Define a unique filename for each story in the zip archive
             file_name = f"{slugify(file_data['metadata']['title'])}_{story_id}_{'images' if download_images else ''}.epub"
-            
+
             # Add the EPUB file to the zip archive in memory
             archive.writestr(file_name, file_data["file"])
 
     # Ensure the buffer's pointer is at the beginning before sending
     zip_buffer.seek(0)
 
-    return {"name":list_data["name"],"file":zip_buffer}
-
+    return {"name": list_data["name"], "file": zip_buffer}
 
 
 async def download_epub(
@@ -205,14 +190,13 @@ async def get_url(url):
     async with ClientSession(
         headers=headers,
     ) as session:
-        async with session.get(
-            url
-        ) as response:
+        async with session.get(url) as response:
             if not response.ok:
                 raise (ValueError)
             else:
                 data = await response.json()
-                return(data)
+                return data
+
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
 
