@@ -83,6 +83,24 @@ def slugify(value, allow_unicode=False) -> str:
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def fetch_story_id(part_id: int, cookies: Optional[dict] = None) -> int:
+    """Return a Story ID from a Part ID."""
+    async with (
+        CachedSession(headers=headers, cache=cache)
+        if not cookies
+        else ClientSession(headers=headers, cookies=cookies)
+    ) as session:  # Don't cache requests with Cookies.
+        async with session.get(
+            f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId"
+        ) as response:
+            response.raise_for_status()
+
+            body = await response.json()
+
+    return body["groupId"]
+
+
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> dict:
     """Taking a story_id, return its information from the Wattpad API."""
     async with (

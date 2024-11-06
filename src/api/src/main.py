@@ -11,12 +11,11 @@ from create_book import (
     add_chapters,
     slugify,
     wp_get_cookies,
+    fetch_story_id,
 )
 import tempfile
 from io import BytesIO
 from fastapi.staticfiles import StaticFiles
-from aiohttp import ClientResponseError, ClientSession
-from zipfile import ZipFile
 
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
@@ -66,9 +65,9 @@ async def handle_download(
 
     match mode:
         case URLType.story:
-            ...
+            story_id = download_id
         case URLType.part:
-            ...
+            story_id = await fetch_story_id(download_id, cookies)
         case URLType.collection:
             raise NotImplementedError()
         case _:
@@ -77,99 +76,15 @@ async def handle_download(
                 content="Unsupported Type. Please attempt to download a story, part, or list",
             )
 
-    # if mode is URLType.story or mode is URLType.part:
-    #     return StreamingResponse(
-    #         BytesIO(data["file"]),
-    #         media_type="application/epub+zip",
-    #         headers={
-    #             "Content-Disposition": f'attachment; filename="{slugify(data["metadata"]["title"])}_{data["metadata"]["id"]}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
-    #         },
-    #     )
-
-    # else:
-    #     return StreamingResponse(
-    #         data["file"],
-    #         media_type="application/zip",
-    #         headers={
-    #             "Content-Disposition": f'attachment; filename="{slugify(data["name"])}_{download_id}_{"images" if download_images else ""}.zip"'  # Thanks https://stackoverflow.com/a/72729058
-    #         },
-    #     )
-
-
-async def download_story(
-    story_id: int,
-    download_images: bool = False,
-    cookies: Optional[dict] = None,
-):
-    data = await download_epub(story_id, download_images, cookies)
-    return data
-
-
-async def download_part(
-    part_id: int,
-    download_images: bool = False,
-    cookies: Optional[dict] = None,
-):
-    # Get Story ID from Part ID
-    response = await get_url(
-        f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId"
-    )
-    story_id = response["groupId"]
-
-    data = await download_epub(story_id, download_images, cookies)
-    return data
-
-
-async def download_list(
-    list_id: int,
-    download_images: bool = False,
-    cookies: Optional[dict] = None,
-):
-
-    list_data = await get_url(
-        f"https://www.wattpad.com/api/v3/lists/{list_id}?fields=name,stories(id)"
-    )
-
-    # Initialize a BytesIO buffer to store the zip file in memory
-    zip_buffer = BytesIO()
-
-    with ZipFile(zip_buffer, "w") as archive:
-        for story in list_data["stories"]:
-            story_id = story["id"]
-
-            # Download each story as an EPUB
-            file_data = await download_epub(story_id, download_images, cookies)
-
-            # Define a unique filename for each story in the zip archive
-            file_name = f"{slugify(file_data['metadata']['title'])}_{story_id}_{'images' if download_images else ''}.epub"
-
-            # Add the EPUB file to the zip archive in memory
-            archive.writestr(file_name, file_data["file"])
-
-    # Ensure the buffer's pointer is at the beginning before sending
-    zip_buffer.seek(0)
-
-    return {"name": list_data["name"], "file": zip_buffer}
-
-
-async def download_epub(
-    story_id: int,
-    download_images: bool = False,
-    cookies: Optional[dict] = None,
-):
-    data = await retrieve_story(story_id, cookies=cookies)
+    metadata = await retrieve_story(story_id, cookies)
     book = epub.EpubBook()
 
-    set_metadata(book, data)
+    set_metadata(book, metadata)
+    await set_cover(book, metadata, cookies=cookies)
 
-    await set_cover(book, data, cookies=cookies)
-    # print("Metadata Downloaded")
-
-    # Chapters are downloaded
     async for title in add_chapters(
-        book, data, download_images=download_images, cookies=cookies
+        book, metadata, download_images=download_images, cookies=cookies
     ):
-        # print(f"Part ({title}) downloaded")
         ...
 
     # Book is compiled
@@ -181,21 +96,15 @@ async def download_epub(
     epub.write_epub(temp_file, book, {})
 
     temp_file.file.seek(0)
-    epub_file = temp_file.file.read()
+    book_data = temp_file.file.read()
 
-    return {"file": epub_file, "metadata": data}
-
-
-async def get_url(url):
-    async with ClientSession(
-        headers=headers,
-    ) as session:
-        async with session.get(url) as response:
-            if not response.ok:
-                raise (ValueError)
-            else:
-                data = await response.json()
-                return data
+    return StreamingResponse(
+        BytesIO(book_data),
+        media_type="application/epub+zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+        },
+    )
 
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
