@@ -1,19 +1,15 @@
 <script>
-  let input_url = "";
   let download_images = false;
   let is_paid_story = false;
+  let invalid_url = false;
+  let after_download_page = false;
   let credentials = {
     username: "",
     password: "",
   };
-  let after_download_page = false;
-  let url = "";
-  let is_list = false;
-  let is_part = false;
-  let is_story = false;
   let download_id = "";
-
-  let invalid_url = false;
+  let mode = "";
+  let input_url = "";
 
   let button_disabled = false;
   $: button_disabled =
@@ -28,57 +24,47 @@
     (is_paid_story
       ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
       : "") +
-    (is_story ? "&mode=story" : "") +
-    (is_part ? "&mode=part" : "") +
-    (is_list ? "&mode=collection" : "");
+    `&mode=${mode}`;
 
   $: {
-    invalid_url = false;
-    if (input_url.includes("wattpad.com")) {
+    if (input_url.length) {
+      input_url = input_url.toLowerCase();
+
+      invalid_url = false;
+      if (!input_url.includes("wattpad.com/")) {
+        invalid_url = true;
+      }
+
       // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
       // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
 
       if (input_url.includes("/story/")) {
         // https://wattpad.com/story/237369078-wattpad-books-presents
-        input_url = input_url.split("-")[0]; // removes tracking fields and title
-        download_id = input_url.split("/story/")[1];
-        is_story = true;
-        is_part = false;
-        is_list = false;
+        input_url = input_url.split("-")[0].split("/story/")[1]; // removes tracking fields and title
+        download_id = input_url;
+        mode = "story";
       } else if (input_url.includes("/stories/")) {
         // https://www.wattpad.com/api/v3/stories/237369078?fields=...
-        input_url = input_url.split("?")[0]; // removes params
-        download_id = input_url.split("/stories/")[1];
-        is_story = true;
-        is_part = false;
-        is_list = false;
+        input_url = input_url.split("?")[0].split("/stories/")[1]; // removes params
+        download_id = input_url;
+        mode = "story";
       } else if (input_url.includes("/list/")) {
         // https://www.wattpad.com/list/953734831--winter-2021-stay-tuned-
         input_url = input_url.split("-")[0]; // removes tracking fields and title
         download_id = input_url.split("/list/")[1];
-        is_story = false;
-        is_part = false;
-        is_list = true;
+        mode = "collection";
       } else {
-        // https://www.wattpad.com/939051741-wattpad-books-presents-part-name
-        input_url = input_url.split("-")[0]; // removes tracking fields and title
-        download_id = input_url.split("wattpad.com/")[1];
+        // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
+        input_url = input_url.split("-")[0].split("wattpad.com/")[1]; // removes tracking fields and title
+        download_id = input_url;
         if (/^\d+$/.test(download_id)) {
-          // Tests if "wattpad.com/{download_id}" contains only numbers
-          is_story = false;
-          is_part = true;
-          is_list = false;
+          // If "wattpad.com/{download_id}" contains only numbers
+          mode = "part";
         } else {
           invalid_url = true;
           input_url = "";
           download_id = "";
         }
-      }
-    } else {
-      if (input_url != "") {
-        invalid_url = true;
-        download_id = "";
-        input_url = "";
       }
     }
   }
@@ -101,7 +87,7 @@
           </p>
           <ul class="pt-4 list list-inside text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
-            <li>11/24 - 📋 List and Part Support!</li>
+            <li>11/24 - 🔗 Paste Links!</li>
             <li>11/24 - 📨 Send to Kindle Support!</li>
 
             <li>11/24 - ⚒️ Fix Image Downloads</li>
@@ -220,13 +206,6 @@
               >Started</span
             >
           </h1>
-          {#if is_list}<div>
-              <h1 class="font-bold text-xl">
-                Please Note: Lists can take a LONG time to download. Please be
-                patient.
-              </h1>
-            </div>
-          {/if}
           <div class="py-4 space-y-2">
             <p class="text-2xl">
               If you found this site useful, please consider <a
