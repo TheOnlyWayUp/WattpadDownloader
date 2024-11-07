@@ -1,6 +1,7 @@
 from typing import Optional
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from enum import Enum
+from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from ebooklib import epub
 from create_book import (
@@ -10,6 +11,7 @@ from create_book import (
     add_chapters,
     slugify,
     wp_get_cookies,
+    fetch_story_id,
 )
 import tempfile
 from io import BytesIO
@@ -18,19 +20,31 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
 
+headers = {
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+}
+
+
+class DownloadMode(Enum):
+    story = "story"
+    part = "part"
+    collection = "collection"
+
 
 @app.get("/")
 def home():
     return FileResponse(BUILD_PATH / "index.html")
 
 
-@app.get("/download/{story_id}")
-async def download_book(
-    story_id: int,
+@app.get("/download/{download_id}")
+async def handle_download(
+    download_id: int,
     download_images: bool = False,
+    mode: DownloadMode = DownloadMode.story,
     username: Optional[str] = None,
     password: Optional[str] = None,
 ):
+
     if username and not password or password and not username:
         return HTMLResponse(
             status_code=422,
@@ -49,25 +63,21 @@ async def download_book(
     else:
         cookies = None
 
-    data = await retrieve_story(story_id, cookies=cookies)
+    match mode:
+        case DownloadMode.story:
+            story_id = download_id
+        case DownloadMode.part:
+            story_id = await fetch_story_id(download_id, cookies)
+
+    metadata = await retrieve_story(story_id, cookies)
     book = epub.EpubBook()
 
-    try:
-        set_metadata(book, data)
-    except KeyError:
-        return HTMLResponse(
-            status_code=404,
-            content='Story not found. Check the ID - Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-        )
+    set_metadata(book, metadata)
+    await set_cover(book, metadata, cookies=cookies)
 
-    await set_cover(book, data, cookies=cookies)
-    # print("Metadata Downloaded")
-
-    # Chapters are downloaded
     async for title in add_chapters(
-        book, data, download_images=download_images, cookies=cookies
+        book, metadata, download_images=download_images, cookies=cookies
     ):
-        # print(f"Part ({title}) downloaded")
         ...
 
     # Book is compiled
@@ -85,7 +95,7 @@ async def download_book(
         BytesIO(book_data),
         media_type="application/epub+zip",
         headers={
-            "Content-Disposition": f'attachment; filename="{slugify(data["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+            "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
         },
     )
 

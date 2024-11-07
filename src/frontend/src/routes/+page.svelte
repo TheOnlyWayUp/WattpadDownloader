@@ -1,52 +1,66 @@
 <script>
-  let story_id = "";
   let download_images = false;
   let is_paid_story = false;
+  let invalid_url = false;
+  let after_download_page = false;
   let credentials = {
     username: "",
     password: "",
   };
-  let after_download_page = false;
-  let url = "";
-
-  let raw_story_id = "";
-  let is_part_id = false;
+  let download_id = "";
+  let mode = "";
+  let input_url = "";
 
   let button_disabled = false;
   $: button_disabled =
-    !story_id ||
+    !input_url ||
     (is_paid_story && !(credentials.username && credentials.password));
 
   $: url =
-    `/download/${story_id}?om=1` +
+    `/download/` +
+    download_id +
+    `?om=1` +
     (download_images ? "&download_images=true" : "") +
     (is_paid_story
       ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
-      : "");
+      : "") +
+    `&mode=${mode}`;
 
   $: {
-    is_part_id = false;
-    if (raw_story_id.includes("wattpad.com")) {
+    if (input_url.length) {
+      input_url = input_url.toLowerCase();
+
+      invalid_url = false;
+      if (!input_url.includes("wattpad.com/")) {
+        invalid_url = true;
+      }
+
       // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
       // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
 
-      if (raw_story_id.includes("/story/")) {
+      if (input_url.includes("/story/")) {
         // https://wattpad.com/story/237369078-wattpad-books-presents
-        story_id = raw_story_id.split("/story/")[1].split("-")[0].split("?")[0]; // removes tracking fields
-        raw_story_id = story_id;
-      } else if (raw_story_id.includes("/stories/")) {
+        input_url = input_url.split("-")[0].split("/story/")[1]; // removes tracking fields and title
+        download_id = input_url;
+        mode = "story";
+      } else if (input_url.includes("/stories/")) {
         // https://www.wattpad.com/api/v3/stories/237369078?fields=...
-        story_id = raw_story_id.split("/stories/")[1].split("?")[0]; // removes params
-        raw_story_id = story_id;
+        input_url = input_url.split("?")[0].split("/stories/")[1]; // removes params
+        download_id = input_url;
+        mode = "story";
       } else {
-        // https://www.wattpad.com/939051741-wattpad-books-presents-part-name
-        is_part_id = true;
-        raw_story_id = "";
-        story_id = "";
+        // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
+        input_url = input_url.split("-")[0].split("wattpad.com/")[1]; // removes tracking fields and title
+        download_id = input_url;
+        if (/^\d+$/.test(download_id)) {
+          // If "wattpad.com/{download_id}" contains only numbers
+          mode = "part";
+        } else {
+          invalid_url = true;
+          input_url = "";
+          download_id = "";
+        }
       }
-    } else {
-      story_id = parseInt(raw_story_id) || ""; // parseInt returns NaN for undefined values.
-      raw_story_id = story_id;
     }
   }
 </script>
@@ -68,6 +82,7 @@
           </p>
           <ul class="pt-4 list list-inside text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
+            <li>11/24 - 🔗 Paste Links!</li>
             <li>11/24 - 📨 Send to Kindle Support!</li>
 
             <li>11/24 - ⚒️ Fix Image Downloads</li>
@@ -88,29 +103,29 @@
             <div class="form-control">
               <input
                 type="text"
-                placeholder="Story ID"
+                placeholder="Story URL"
                 class="input input-bordered"
-                class:input-warning={is_part_id}
-                bind:value={raw_story_id}
+                class:input-warning={invalid_url}
+                bind:value={input_url}
                 required
-                name="story_id"
+                name="input_url"
               />
-              <label class="label" for="story_id">
-                {#if is_part_id}
+              <label class="label" for="input_url">
+                {#if invalid_url}
                   <p class=" text-red-500">
                     Refer to (<button
                       class="link font-semibold"
-                      onclick="StoryIDTutorialModal.showModal()"
-                      data-umami-event="Part StoryIDTutorialModal Open"
-                      >How to get a Story ID</button
+                      onclick="StoryURLTutorialModal.showModal()"
+                      data-umami-event="Part StoryURLTutorialModal Open"
+                      >How to get a Story URL</button
                     >).
                   </p>
                 {:else}
                   <button
                     class="label-text link font-semibold"
-                    onclick="StoryIDTutorialModal.showModal()"
-                    data-umami-event="StoryIDTutorialModal Open"
-                    >How to get a Story ID</button
+                    onclick="StoryURLTutorialModal.showModal()"
+                    data-umami-event="StoryURLTutorialModal Open"
+                    >How to get a Story URL</button
                   >
                 {/if}
               </label>
@@ -207,7 +222,7 @@
           <button
             on:click={() => {
               after_download_page = false;
-              raw_story_id = "";
+              input_url = "";
             }}
             class="btn btn-outline btn-lg mt-10">Download More</button
           >
