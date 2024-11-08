@@ -2,7 +2,7 @@ WattpadDownloader ([Demo](https://wpd.rambhat.la))
 ---
 Straightforward, Extendable WebApp to download Wattpad Books as EPUB Files.
 
-![image](./pics/v4.png)
+![image](https://github.com/user-attachments/assets/b9d87d6b-5302-4561-98b0-d7f95bff9f04)
 
 
 Stars ⭐ are appreciated. Thanks!
