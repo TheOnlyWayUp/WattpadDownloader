@@ -161,6 +161,22 @@ async def fetch_cover(url: str, cookies: Optional[dict] = None) -> bytes:
     return body
 
 
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def retrieve_list(list_id: int, cookies: Optional[dict] = None) -> int:
+    """Taking a List ID, return its information from the Wattpad API."""
+    async with (
+        CachedSession(headers=headers, cache=cache)
+        if not cookies
+        else ClientSession(headers=headers, cookies=cookies)
+    ) as session:  # Don't cache requests with Cookies.
+        async with session.get(
+            f"https://www.wattpad.com/api/v3/lists/{list_id}?fields=name,stories(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover)"
+        ) as response:
+            response.raise_for_status()
+            body = await response.json()
+    return body
+
+
 # --- EPUB Generation --- #
 
 
