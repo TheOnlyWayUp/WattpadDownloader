@@ -18,10 +18,10 @@
   <aside>
     <div class="grid grid-cols-3 max-w-lg w-full">
       <a
-        href="https://liberapay.com/TheOnlyWayUp/"
+        href="https://patreon.com/theonlywayup"
         target="_blank"
         class="link"
-        data-umami-event="Footer Donate">Donate</a
+        data-umami-event="Footer Donate">Patreon</a
       >
       <a
         href="https://rambhat.la"
