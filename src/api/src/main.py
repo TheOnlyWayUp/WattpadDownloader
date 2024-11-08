@@ -63,41 +63,49 @@ async def handle_download(
     else:
         cookies = None
 
-    match mode:
-        case DownloadMode.story:
-            story_id = download_id
-        case DownloadMode.part:
-            story_id = await fetch_story_id(download_id, cookies)
+    try:
+        match mode:
+            case DownloadMode.story:
+                story_id = download_id
+            case DownloadMode.part:
+                story_id = await fetch_story_id(download_id, cookies)
 
-    metadata = await retrieve_story(story_id, cookies)
-    book = epub.EpubBook()
+        metadata = await retrieve_story(story_id, cookies)
+        book = epub.EpubBook()
 
-    set_metadata(book, metadata)
-    await set_cover(book, metadata, cookies=cookies)
+        set_metadata(book, metadata)
+        await set_cover(book, metadata, cookies=cookies)
 
-    async for title in add_chapters(
-        book, metadata, download_images=download_images, cookies=cookies
-    ):
-        ...
+        async for title in add_chapters(
+            book, metadata, download_images=download_images, cookies=cookies
+        ):
+            ...
 
-    # Book is compiled
-    temp_file = tempfile.NamedTemporaryFile(
-        suffix=".epub", delete=True
-    )  # Thanks https://stackoverflow.com/a/75398222
+        # Book is compiled
+        temp_file = tempfile.NamedTemporaryFile(
+            suffix=".epub", delete=True
+        )  # Thanks https://stackoverflow.com/a/75398222
 
-    # create epub file
-    epub.write_epub(temp_file, book, {})
+        # create epub file
+        epub.write_epub(temp_file, book, {})
 
-    temp_file.file.seek(0)
-    book_data = temp_file.file.read()
+        temp_file.file.seek(0)
+        book_data = temp_file.file.read()
 
-    return StreamingResponse(
-        BytesIO(book_data),
-        media_type="application/epub+zip",
-        headers={
-            "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
-        },
-    )
+        return StreamingResponse(
+            BytesIO(book_data),
+            media_type="application/epub+zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+            },
+        )
+
+    except KeyError:
+        # Invalid ID
+        return HTMLResponse(
+            status_code=404,
+            content='The story you tried to download does not exist or has been deleted. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+        )
 
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
