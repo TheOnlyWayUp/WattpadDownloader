@@ -241,25 +241,24 @@
         >✕</button
       >
     </form>
-    <h3 class="font-bold text-lg">Retrieving a Story ID</h3>
+    <h3 class="font-bold text-lg">Finding the Story URL</h3>
     <ol class="list list-disc list-inside py-4 space-y-4">
       <li>
-        Open the Story URL, this page includes the story description and tags.
-        (For example, <span class="font-mono bg-slate-100 p-1"
-          >wattpad.com/story/237369078-wattpad-books-presents</span
-        >).
+        Copy the URL from the Website, or hit share and copy the URL on the App.
       </li>
       <li>
-        Copy the numbers after the <span class="font-mono bg-slate-100 p-1"
-          >/</span
-        >
-        (In the example, that'd be,
+        For example,
         <span class="font-mono bg-slate-100 p-1"
-          >wattpad.com/story/<span class="bg-amber-200 p-1">237369078</span
-          >-wattpad-books-presents</span
-        >)
+          >wattpad.com/<span class="bg-amber-200 rounded-sm">story</span
+          >/237369078-wattpad-books-presents</span
+        >.
       </li>
-      <li>Paste the Story ID and hit Download!</li>
+      <li>
+        <span class="font-mono bg-slate-100 p-1"
+          >https://www.wattpad.com/939103774-given</span
+        > is okay too.
+      </li>
+      <li>Paste the URL and hit Download!</li>
     </ol>
   </div>
   <form method="dialog" class="modal-backdrop">
