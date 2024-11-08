@@ -14,7 +14,7 @@ Stars ⭐ are appreciated. Thanks!
 - 🐇 Fast Generation, Ratelimit Handling.
 - 🐳 Docker Support
 - 🏷️ Generated EPUB File includes Metadata. (Dublin Core Spec)
-- 📖 Plays well with E-Readers. (Kindle Support if KOReader present, ReMarkable, KOBO, ...)
+- 📖 Plays well with E-Readers. (Kindle Support with Send2Kindle, ReMarkable, KOBO, KOReader...)
 - 💻 Easily Hackable. Extend with ease.
 
 
