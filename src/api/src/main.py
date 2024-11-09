@@ -16,6 +16,7 @@ from create_book import (
 import tempfile
 from io import BytesIO
 from fastapi.staticfiles import StaticFiles
+from aiohttp import ClientResponseError
 
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
@@ -105,6 +106,13 @@ async def handle_download(
         return HTMLResponse(
             status_code=404,
             content='The story you tried to download does not exist or has been deleted. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+        )
+
+    except ClientResponseError:
+        # Rate-limit by Wattpad
+        return HTMLResponse(
+            status_code=429,
+            content='Unfortunately, the downloader got rate-limited by Wattpad. Please try again later. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
         )
 
 
