@@ -74,6 +74,13 @@ async def handle_download(
         metadata = await retrieve_story(story_id, cookies)
         book = epub.EpubBook()
 
+        if not metadata:
+            # Invalid ID
+            return HTMLResponse(
+                status_code=404,
+                content='The story you tried to download does not exist or has been deleted. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
+
         set_metadata(book, metadata)
         await set_cover(book, metadata, cookies=cookies)
 
@@ -101,19 +108,25 @@ async def handle_download(
             },
         )
 
-    except KeyError:
-        # Invalid ID
-        return HTMLResponse(
-            status_code=404,
-            content='The story you tried to download does not exist or has been deleted. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-        )
-
-    except ClientResponseError:
-        # Rate-limit by Wattpad
-        return HTMLResponse(
-            status_code=429,
-            content='Unfortunately, the downloader got rate-limited by Wattpad. Please try again later. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-        )
+    except ClientResponseError as error:
+        if error.status == 429:
+            # Rate-limit by Wattpad
+            return HTMLResponse(
+                status_code=429,
+                content='Unfortunately, the downloader got rate-limited by Wattpad. Please try again later. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
+        elif error.status == 400:
+            # Invalid ID
+            return HTMLResponse(
+                status_code=404,
+                content='The story you tried to download does not exist or has been deleted. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
+        else:
+            # Unhandled error
+            return HTMLResponse(
+                status_code=500,
+                content='Something went wrong. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
 
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
