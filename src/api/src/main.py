@@ -1,8 +1,14 @@
+"""WattpadDownloader API Server."""
+
 from typing import Optional
+import tempfile
 from pathlib import Path
+from io import BytesIO
 from enum import Enum
-from fastapi import FastAPI
+from aiohttp import ClientResponseError
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from ebooklib import epub
 from create_book import (
     retrieve_story,
@@ -13,9 +19,6 @@ from create_book import (
     wp_get_cookies,
     fetch_story_id,
 )
-import tempfile
-from io import BytesIO
-from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
@@ -36,6 +39,28 @@ def home():
     return FileResponse(BUILD_PATH / "index.html")
 
 
+@app.exception_handler(ClientResponseError)
+def download_error_handler(request: Request, exception: ClientResponseError):
+    match exception.status:
+        case 400 | 404:
+            return HTMLResponse(
+                status_code=404,
+                content='This story does not exist, or has been deleted. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
+        case 429:
+            # Rate-limit by Wattpad
+            return HTMLResponse(
+                status_code=429,
+                content='The website is overloaded. Please try again in a few minutes. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
+        case _:
+            # Unhandled error
+            return HTMLResponse(
+                status_code=500,
+                content='Something went wrong. Yell at me on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
+
+
 @app.get("/download/{download_id}")
 async def handle_download(
     download_id: int,
@@ -44,7 +69,6 @@ async def handle_download(
     username: Optional[str] = None,
     password: Optional[str] = None,
 ):
-
     if username and not password or password and not username:
         return HTMLResponse(
             status_code=422,
@@ -69,10 +93,11 @@ async def handle_download(
         case DownloadMode.part:
             story_id = await fetch_story_id(download_id, cookies)
 
-    metadata = await retrieve_story(story_id, cookies)
     book = epub.EpubBook()
 
+    metadata = await retrieve_story(story_id, cookies)
     set_metadata(book, metadata)
+
     await set_cover(book, metadata, cookies=cookies)
 
     async for title in add_chapters(
