@@ -111,9 +111,6 @@ async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> dict:
         async with session.get(
             f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
         ) as response:
-            if not response.ok:
-                if response.status in [404, 400]:
-                    return {}
             response.raise_for_status()
 
             body = await response.json()
@@ -132,9 +129,6 @@ async def fetch_part_content(part_id: int, cookies: Optional[dict] = None) -> st
         async with session.get(
             f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
         ) as response:
-            if not response.ok:
-                if response.status in [404, 400]:
-                    return ""
             response.raise_for_status()
 
             body = await response.text()
@@ -151,9 +145,6 @@ async def fetch_cover(url: str, cookies: Optional[dict] = None) -> bytes:
         else ClientSession(headers=headers, cookies=cookies)
     ) as session:  # Don't cache requests with Cookies.
         async with session.get(url) as response:
-            if not response.ok:
-                if response.status in [404, 400]:
-                    return bytes()
             response.raise_for_status()
 
             body = await response.read()
