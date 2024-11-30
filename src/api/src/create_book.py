@@ -139,10 +139,8 @@ def slugify(value, allow_unicode=False) -> str:
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_story_id(part_id: int, cookies: Optional[dict] = None) -> int:
     """Return a Story ID from a Part ID."""
-    async with (
-        CachedSession(headers=headers, cache=cache)
-        if not cookies
-        else ClientSession(headers=headers, cookies=cookies)
+    async with CachedSession(
+        headers=headers, cache=None if cookies else cache
     ) as session:  # Don't cache requests with Cookies.
         async with session.get(
             f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId"
@@ -157,10 +155,8 @@ async def fetch_story_id(part_id: int, cookies: Optional[dict] = None) -> int:
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> dict:
     """Taking a story_id, return its information from the Wattpad API."""
-    async with (
-        CachedSession(headers=headers, cache=cache)
-        if not cookies
-        else ClientSession(headers=headers, cookies=cookies)
+    async with CachedSession(
+        headers=headers, cache=None if cookies else cache
     ) as session:  # Don't cache requests with Cookies.
         async with session.get(
             f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
@@ -175,10 +171,8 @@ async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> dict:
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_part_content(part_id: int, cookies: Optional[dict] = None) -> str:
     """Return the HTML Content of a Part."""
-    async with (
-        CachedSession(headers=headers, cache=cache)
-        if not cookies
-        else ClientSession(headers=headers, cookies=cookies)
+    async with CachedSession(
+        headers=headers, cache=None if cookies else cache
     ) as session:  # Don't cache requests with Cookies.
         async with session.get(
             f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
@@ -193,10 +187,8 @@ async def fetch_part_content(part_id: int, cookies: Optional[dict] = None) -> st
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_cover(url: str, cookies: Optional[dict] = None) -> bytes:
     """Fetch image bytes."""
-    async with (
-        CachedSession(headers=headers, cache=cache)
-        if not cookies
-        else ClientSession(headers=headers, cookies=cookies)
+    async with CachedSession(
+        headers=headers, cache=None if cookies else cache
     ) as session:  # Don't cache requests with Cookies.
         async with session.get(url) as response:
             response.raise_for_status()
