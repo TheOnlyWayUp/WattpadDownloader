@@ -26,20 +26,6 @@
       : "") +
     `&mode=${mode}`;
 
-  function is_all_digits(text) {
-    // Thanks https://stackoverflow.com/a/76688650
-    let allDigits = true;
-    if (!text.isEmpty()) {
-      for (i = 0; i < text.length(); i++) {
-        if (!Character.isDigit(text.charAt(i))) {
-          allDigits = false;
-          break;
-        }
-      }
-    }
-    return allDigits;
-  }
-
   $: {
     if (input_url.length) {
       input_url = input_url.toLowerCase();
