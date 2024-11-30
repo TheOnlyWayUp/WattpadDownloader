@@ -48,7 +48,6 @@
 
       if (/^\d+$/.test(input_url)) {
         // All numbers
-        console.log("1");
         download_id = input_url;
         mode = "story";
       } else if (input_url.includes("wattpad.com/")) {
