@@ -144,7 +144,7 @@ async def handle_download(
             case DownloadMode.part:
                 story_id, metadata = await fetch_story_from_partId(download_id, cookies)
 
-        logger.error(f"Retrieved story id ({story_id=})")
+        logger.info(f"Retrieved story id ({story_id=})")
 
         book = epub.EpubBook()
         set_metadata(book, metadata)
