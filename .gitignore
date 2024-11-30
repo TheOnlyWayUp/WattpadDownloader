@@ -5,3 +5,4 @@ data
 *ipynb
 build
 .vscode
+.venv

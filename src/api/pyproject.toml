@@ -1,0 +1,17 @@
+[project]
+name = "api"
+version = "0.1.0"
+description = "Wattpad Downloader API"
+readme = "../../README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "aiohttp>=3.9.1",
+    "aiohttp-client-cache[all]>=0.10.0",
+    "rich>=13.9.4",
+    "fastapi>=0.115.5",
+    "ebooklib>=0.18",
+    "python-dotenv>=1.0.1",
+]
+
+[tool.ruff.lint]
+ignore = ['E402']
