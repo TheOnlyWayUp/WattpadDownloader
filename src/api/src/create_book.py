@@ -12,7 +12,7 @@ from ebooklib import epub
 from bs4 import BeautifulSoup
 from pydantic import model_validator, field_validator
 from pydantic_settings import BaseSettings
-from aiohttp import ClientResponseError, ClientSession
+from aiohttp import ClientResponseError
 from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend, RedisBackend
 
@@ -107,7 +107,7 @@ async def wp_get_cookies(username: str, password: str) -> dict:
         dict: Authorization cookies.
     """
     with start_action(action_type="api_fetch_cookies"):
-        async with ClientSession(headers=headers) as session:
+        async with CachedSession(headers=headers, cache=None) as session:
             async with session.post(
                 "https://www.wattpad.com/auth/login?nextUrl=%2F&_data=routes%2Fauth.login",
                 data={
@@ -245,7 +245,7 @@ def set_metadata(book, data):
     )
 
 
-async def set_cover(book, data, cookies: Optional[dict] = None):
+async def set_cover(book, data):
     book.set_cover("cover.jpg", await fetch_cover(data["cover"]))
     chapter = epub.EpubHtml(
         file_name="titlepage.xhtml",  # Standard for cover page
@@ -272,11 +272,9 @@ async def add_chapters(
         if download_images:
             soup = BeautifulSoup(content, "lxml")
 
-            async with (
-                CachedSession(headers=headers, cache=cache)
-                if not cookies
-                else ClientSession(headers=headers, cookies=cookies)
-            ) as session:  # Don't cache requests with Cookies.
+            async with CachedSession(
+                headers=headers, cache=None
+            ) as session:  # Don't cache requests for images.
                 for idx, image in enumerate(soup.find_all("img")):
                     if not image["src"]:
                         continue

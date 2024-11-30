@@ -151,7 +151,7 @@ async def handle_download(
         metadata = await retrieve_story(story_id, cookies)
         set_metadata(book, metadata)
 
-        await set_cover(book, metadata, cookies=cookies)
+        await set_cover(book, metadata)
 
         async for title in add_chapters(
             book, metadata, download_images=download_images, cookies=cookies
