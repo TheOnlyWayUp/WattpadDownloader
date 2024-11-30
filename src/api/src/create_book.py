@@ -9,6 +9,7 @@ from eliot import to_file, start_action
 from eliot.stdlib import EliotHandler
 from dotenv import load_dotenv
 from ebooklib import epub
+from ebooklib.epub import EpubBook
 from bs4 import BeautifulSoup
 from pydantic import model_validator, field_validator
 from pydantic_settings import BaseSettings
@@ -27,6 +28,8 @@ if environ.get("DEBUG"):
 
 logger = logging.Logger("wpd")
 logger.addHandler(handler)
+
+# --- #
 
 
 class CacheTypes(Enum):
@@ -71,6 +74,8 @@ class Config(BaseSettings):
 
 config = Config()
 
+# --- #
+
 headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
 }
@@ -89,6 +94,29 @@ else:
 logger.info(f"Using {cache=}")
 
 # --- Utilities --- #
+
+
+def slugify(value, allow_unicode=False) -> str:
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+
+    Thanks https://stackoverflow.com/a/295466.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize("NFKC", value)
+    else:
+        value = (
+            unicodedata.normalize("NFKD", value)
+            .encode("ascii", "ignore")
+            .decode("ascii")
+        )
+    value = re.sub(r"[^\w\s-]", "", value.lower())
+    return re.sub(r"[-\s]+", "-", value).strip("-_")
 
 
 async def wp_get_cookies(username: str, password: str) -> dict:
@@ -129,38 +157,15 @@ async def wp_get_cookies(username: str, password: str) -> dict:
                 return cookies
 
 
-def slugify(value, allow_unicode=False) -> str:
-    """
-    Taken from https://github.com/django/django/blob/master/django/utils/text.py
-    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
-    dashes to single dashes. Remove characters that aren't alphanumerics,
-    underscores, or hyphens. Convert to lowercase. Also strip leading and
-    trailing whitespace, dashes, and underscores.
-
-    Thanks https://stackoverflow.com/a/295466.
-    """
-    value = str(value)
-    if allow_unicode:
-        value = unicodedata.normalize("NFKC", value)
-    else:
-        value = (
-            unicodedata.normalize("NFKD", value)
-            .encode("ascii", "ignore")
-            .decode("ascii")
-        )
-    value = re.sub(r"[^\w\s-]", "", value.lower())
-    return re.sub(r"[-\s]+", "-", value).strip("-_")
-
-
 # --- API Calls --- #
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def fetch_story_id(
+async def fetch_story_from_partId(
     part_id: int, cookies: Optional[dict] = None
 ) -> Tuple[int, dict]:
     """Return a Story ID from a Part ID."""
-    with start_action(action_type="api_fetch_storyFromPart"):
+    with start_action(action_type="api_fetch_storyFromPartId"):
         async with CachedSession(
             headers=headers, cache=None if cookies else cache
         ) as session:  # Don't cache requests with Cookies.
@@ -214,7 +219,7 @@ async def fetch_cover(url: str) -> bytes:
     with start_action(action_type="api_fetch_cover", url=url):
         async with CachedSession(
             headers=headers, cache=None
-        ) as session:  # Don't cache cover requests.
+        ) as session:  # Don't cache images.
             async with session.get(url) as response:
                 response.raise_for_status()
 
@@ -226,7 +231,8 @@ async def fetch_cover(url: str) -> bytes:
 # --- EPUB Generation --- #
 
 
-def set_metadata(book, data):
+def set_metadata(book: EpubBook, data: dict) -> None:
+    """Set book metadata."""
     book.add_author(data["user"]["username"])
 
     book.add_metadata("DC", "title", data["title"])
@@ -246,7 +252,8 @@ def set_metadata(book, data):
     )
 
 
-async def set_cover(book, data):
+async def set_cover(book: EpubBook, data: dict) -> None:
+    """Set book cover."""
     book.set_cover("cover.jpg", await fetch_cover(data["cover"]))
     chapter = epub.EpubHtml(
         file_name="titlepage.xhtml",  # Standard for cover page
@@ -255,7 +262,10 @@ async def set_cover(book, data):
 
 
 async def add_chapters(
-    book, data, download_images: bool = False, cookies: Optional[dict] = None
+    book: EpubBook,
+    data: dict,
+    download_images: bool = False,
+    cookies: Optional[dict] = None,
 ):
     chapters = []
 
@@ -275,7 +285,7 @@ async def add_chapters(
 
             async with CachedSession(
                 headers=headers, cache=None
-            ) as session:  # Don't cache requests for images.
+            ) as session:  # Don't cache images.
                 for idx, image in enumerate(soup.find_all("img")):
                     if not image["src"]:
                         continue
@@ -303,7 +313,7 @@ async def add_chapters(
     for chapter in chapters:
         book.add_item(chapter)
 
-    book.toc = tuple(chapters)
+    book.toc = chapters
 
     # Thanks https://github.com/aerkalov/ebooklib/blob/master/samples/09_create_image/create.py
     book.add_item(epub.EpubNcx())

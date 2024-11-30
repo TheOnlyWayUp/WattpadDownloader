@@ -19,7 +19,7 @@ from create_book import (
     add_chapters,
     slugify,
     wp_get_cookies,
-    fetch_story_id,
+    fetch_story_from_partId,
     logger,
 )
 
@@ -143,7 +143,7 @@ async def handle_download(
                 story_id = download_id
                 metadata = await retrieve_story(story_id, cookies)
             case DownloadMode.part:
-                story_id, metadata = await fetch_story_id(download_id, cookies)
+                story_id, metadata = await fetch_story_from_partId(download_id, cookies)
 
         logger.error(f"Retrieved story id ({story_id=})")
 
