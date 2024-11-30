@@ -26,41 +26,69 @@
       : "") +
     `&mode=${mode}`;
 
+  function is_all_digits(text) {
+    // Thanks https://stackoverflow.com/a/76688650
+    let allDigits = true;
+    if (!text.isEmpty()) {
+      for (i = 0; i < text.length(); i++) {
+        if (!Character.isDigit(text.charAt(i))) {
+          allDigits = false;
+          break;
+        }
+      }
+    }
+    return allDigits;
+  }
+
   $: {
     if (input_url.length) {
       input_url = input_url.toLowerCase();
 
       invalid_url = false;
-      if (!input_url.includes("wattpad.com/")) {
+
+      if (/^\d+$/.test(input_url)) {
+        // All numbers
+        console.log("1");
+        download_id = input_url;
+        mode = "story";
+      } else if (input_url.includes("wattpad.com/")) {
+        // Is a string and contains contain wattpad.com/
+
+        if (input_url.includes("/story/")) {
+          // https://wattpad.com/story/237369078-wattpad-books-presents
+          input_url = input_url.split("-")[0].split("/story/")[1]; // removes tracking fields and title
+          download_id = input_url;
+          mode = "story";
+        } else if (input_url.includes("/stories/")) {
+          // https://www.wattpad.com/api/v3/stories/237369078?fields=...
+          input_url = input_url.split("?")[0].split("/stories/")[1]; // removes params
+          download_id = input_url;
+          mode = "story";
+        } else {
+          // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
+          input_url = input_url.split("-")[0].split("wattpad.com/")[1]; // removes tracking fields and title
+          download_id = input_url;
+          if (/^\d+$/.test(download_id)) {
+            // If "wattpad.com/{download_id}" contains only numbers
+            mode = "part";
+          } else {
+            invalid_url = true;
+            input_url = "";
+            download_id = "";
+          }
+        }
+      } else {
         invalid_url = true;
       }
 
+      input_url = input_url.match(/\d+/g)?.join("") || "";
+      download_id = input_url;
+
       // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
       // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
-
-      if (input_url.includes("/story/")) {
-        // https://wattpad.com/story/237369078-wattpad-books-presents
-        input_url = input_url.split("-")[0].split("/story/")[1]; // removes tracking fields and title
-        download_id = input_url;
-        mode = "story";
-      } else if (input_url.includes("/stories/")) {
-        // https://www.wattpad.com/api/v3/stories/237369078?fields=...
-        input_url = input_url.split("?")[0].split("/stories/")[1]; // removes params
-        download_id = input_url;
-        mode = "story";
-      } else {
-        // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
-        input_url = input_url.split("-")[0].split("wattpad.com/")[1]; // removes tracking fields and title
-        download_id = input_url;
-        if (/^\d+$/.test(download_id)) {
-          // If "wattpad.com/{download_id}" contains only numbers
-          mode = "part";
-        } else {
-          invalid_url = true;
-          input_url = "";
-          download_id = "";
-        }
-      }
+    } else {
+      invalid_url = false;
+      download_id = "";
     }
   }
 </script>
