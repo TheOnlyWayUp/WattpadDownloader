@@ -87,7 +87,9 @@ if config.USE_CACHE:
             cache = FileBackend(use_temp=True, expire_after=43200)  # 12 hours
         case CacheTypes.redis:
             cache = RedisBackend(
-                cache_name="wpd-aiohttp-cache", address=config.REDIS_CONNECTION_URL
+                cache_name="wpd-aiohttp-cache",
+                address=config.REDIS_CONNECTION_URL,
+                expire_after=43200,  # 12 hours
             )
 else:
     cache = None
