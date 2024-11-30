@@ -156,7 +156,6 @@ async def handle_download(
         async for title in add_chapters(
             book, metadata, download_images=download_images, cookies=cookies
         ):
-            print(title)
             ...
 
         # Book is compiled

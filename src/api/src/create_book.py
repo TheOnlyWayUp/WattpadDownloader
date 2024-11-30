@@ -177,7 +177,6 @@ async def fetch_story_id(
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> dict:
     """Taking a story_id, return its information from the Wattpad API."""
-    print("using cache", None if cookies else cache)
     with start_action(action_type="api_fetch_story", story_id=story_id):
         async with CachedSession(
             headers=headers, cookies=cookies, cache=None if cookies else cache
