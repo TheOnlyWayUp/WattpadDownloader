@@ -72,7 +72,6 @@ app.add_middleware(RequestCancelledMiddleware)
 class DownloadMode(Enum):
     story = "story"
     part = "part"
-    collection = "collection"
 
 
 @app.get("/")
@@ -148,9 +147,7 @@ async def handle_download(
         logger.error(f"Retrieved story id ({story_id=})")
 
         book = epub.EpubBook()
-
         set_metadata(book, metadata)
-
         await set_cover(book, metadata)
 
         async for title in add_chapters(

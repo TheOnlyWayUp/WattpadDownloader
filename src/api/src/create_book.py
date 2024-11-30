@@ -1,4 +1,5 @@
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
+from typing_extensions import TypedDict
 import re
 import unicodedata
 import logging
@@ -11,7 +12,7 @@ from dotenv import load_dotenv
 from ebooklib import epub
 from ebooklib.epub import EpubBook
 from bs4 import BeautifulSoup
-from pydantic import model_validator, field_validator
+from pydantic import TypeAdapter, model_validator, field_validator
 from pydantic_settings import BaseSettings
 from aiohttp import ClientResponseError
 from aiohttp_client_cache.session import CachedSession
@@ -157,13 +158,48 @@ async def wp_get_cookies(username: str, password: str) -> dict:
                 return cookies
 
 
+# --- Models --- #
+
+
+class Language(TypedDict):
+    name: str
+
+
+class User(TypedDict):
+    username: str
+
+
+class Part(TypedDict):
+    id: int
+    title: str
+
+
+class Story(TypedDict):
+    id: str
+    title: str
+    createDate: str
+    modifyDate: str
+    language: Language
+    user: User
+    description: str
+    cover: str
+    completed: bool
+    tags: List[str]
+    mature: bool
+    url: str
+    parts: List[Part]
+    isPaywalled: bool
+
+
+story_ta = TypeAdapter(Story)
+
 # --- API Calls --- #
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_story_from_partId(
     part_id: int, cookies: Optional[dict] = None
-) -> Tuple[int, dict]:
+) -> Tuple[str, Story]:
     """Return a Story ID from a Part ID."""
     with start_action(action_type="api_fetch_storyFromPartId"):
         async with CachedSession(
@@ -176,11 +212,11 @@ async def fetch_story_from_partId(
 
                 body = await response.json()
 
-        return body["groupId"], body["group"]
+        return str(body["groupId"]), story_ta.validate_python(body["group"])
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> dict:
+async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> Story:
     """Taking a story_id, return its information from the Wattpad API."""
     with start_action(action_type="api_fetch_story", story_id=story_id):
         async with CachedSession(
@@ -193,7 +229,7 @@ async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> dict:
 
                 body = await response.json()
 
-        return body
+        return story_ta.validate_python(body)
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
@@ -231,7 +267,7 @@ async def fetch_cover(url: str) -> bytes:
 # --- EPUB Generation --- #
 
 
-def set_metadata(book: EpubBook, data: dict) -> None:
+def set_metadata(book: EpubBook, data: Story) -> None:
     """Set book metadata."""
     book.add_author(data["user"]["username"])
 
@@ -252,7 +288,7 @@ def set_metadata(book: EpubBook, data: dict) -> None:
     )
 
 
-async def set_cover(book: EpubBook, data: dict) -> None:
+async def set_cover(book: EpubBook, data: Story) -> None:
     """Set book cover."""
     book.set_cover("cover.jpg", await fetch_cover(data["cover"]))
     chapter = epub.EpubHtml(
@@ -263,7 +299,7 @@ async def set_cover(book: EpubBook, data: dict) -> None:
 
 async def add_chapters(
     book: EpubBook,
-    data: dict,
+    data: Story,
     download_images: bool = False,
     cookies: Optional[dict] = None,
 ):

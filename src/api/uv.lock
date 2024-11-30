@@ -195,6 +195,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
     { name = "rich" },
+    { name = "type-extensions" },
 ]
 
 [package.metadata]
@@ -207,6 +208,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.6.1" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "rich", specifier = ">=13.9.4" },
+    { name = "type-extensions", specifier = ">=0.1.2" },
 ]
 
 [[package]]
@@ -892,6 +894,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1a/4c/9b5764bd22eec91c4039ef4c55334e9187085da2d8a2df7bd570869aae18/starlette-0.41.3.tar.gz", hash = "sha256:0e4ab3d16522a255be6b28260b938eae2482f98ce5cc934cb08dce8dc3ba5835", size = 2574159 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/96/00/2b325970b3060c7cecebab6d295afe763365822b1306a12eeab198f74323/starlette-0.41.3-py3-none-any.whl", hash = "sha256:44cedb2b7c77a9de33a8b74b2b90e9f50d11fcf25d8270ea525ad71a25374ff7", size = 73225 },
+]
+
+[[package]]
+name = "type-extensions"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/80/d0/18bf3a92af3f6a0fc38f874e858d707242ac5c14148ff1c4ee1615397e73/type_extensions-0.1.2.tar.gz", hash = "sha256:7c7b54eba6d7401ad5e69ecec6b7c767d7d7aae9b2b7e56249bc7bcaf833161f", size = 16102 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/dc/707d386bbd830d72fdd58c06f1d8a935d2553498f6868cd7de141addbe06/type_extensions-0.1.2-py2.py3-none-any.whl", hash = "sha256:fc9c8506f87b6227eeb43795061d61571b66a07df6fbcacf31a17d2cb2050153", size = 5566 },
 ]
 
 [[package]]

@@ -13,6 +13,7 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "pydantic-settings>=2.6.1",
     "eliot>=1.16.0",
+    "type-extensions>=0.1.2",
 ]
 
 [tool.ruff.lint]
