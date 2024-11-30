@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 import re
 import unicodedata
 import logging
@@ -156,20 +156,22 @@ def slugify(value, allow_unicode=False) -> str:
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def fetch_story_id(part_id: int, cookies: Optional[dict] = None) -> int:
+async def fetch_story_id(
+    part_id: int, cookies: Optional[dict] = None
+) -> Tuple[int, dict]:
     """Return a Story ID from a Part ID."""
     with start_action(action_type="api_fetch_storyFromPart"):
         async with CachedSession(
             headers=headers, cache=None if cookies else cache
         ) as session:  # Don't cache requests with Cookies.
             async with session.get(
-                f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId"
+                f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId,group(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover)"
             ) as response:
                 response.raise_for_status()
 
                 body = await response.json()
 
-        return body["groupId"]
+        return body["groupId"], body["group"]
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)

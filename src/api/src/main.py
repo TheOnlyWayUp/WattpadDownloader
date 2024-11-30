@@ -141,14 +141,14 @@ async def handle_download(
         match mode:
             case DownloadMode.story:
                 story_id = download_id
+                metadata = await retrieve_story(story_id, cookies)
             case DownloadMode.part:
-                story_id = await fetch_story_id(download_id, cookies)
+                story_id, metadata = await fetch_story_id(download_id, cookies)
 
         logger.error(f"Retrieved story id ({story_id=})")
 
         book = epub.EpubBook()
 
-        metadata = await retrieve_story(story_id, cookies)
         set_metadata(book, metadata)
 
         await set_cover(book, metadata)
@@ -174,7 +174,7 @@ async def handle_download(
             BytesIO(book_data),
             media_type="application/epub+zip",
             headers={
-                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
             },
         )
 
@@ -185,4 +185,4 @@ app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8086, workers=24)
+    uvicorn.run("main:app", host="0.0.0.0", port=80, workers=16)
