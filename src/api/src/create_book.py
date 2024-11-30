@@ -190,8 +190,8 @@ async def fetch_part_content(part_id: int, cookies: Optional[dict] = None) -> st
 async def fetch_cover(url: str, cookies: Optional[dict] = None) -> bytes:
     """Fetch image bytes."""
     async with CachedSession(
-        headers=headers, cache=None if cookies else cache
-    ) as session:  # Don't cache requests with Cookies.
+        headers=headers, cache=None
+    ) as session:  # Don't cache cover requests.
         async with session.get(url) as response:
             response.raise_for_status()
 
