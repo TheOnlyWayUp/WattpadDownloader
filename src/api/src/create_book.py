@@ -1,18 +1,18 @@
 from typing import Optional
-from dotenv import load_dotenv
-
-load_dotenv()
 import re
 import unicodedata
-from os import environ
 from enum import Enum
 import backoff
+from dotenv import load_dotenv
 from ebooklib import epub
 from bs4 import BeautifulSoup
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import model_validator, field_validator
+from pydantic_settings import BaseSettings
 from aiohttp import ClientResponseError, ClientSession
 from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend, RedisBackend
+
+load_dotenv(override=True)
 
 
 class CacheTypes(Enum):
@@ -20,22 +20,24 @@ class CacheTypes(Enum):
     redis = "redis"
 
 
-class Config(BaseModel):
+class Config(BaseSettings):
     USE_CACHE: bool = True
     CACHE_TYPE: CacheTypes = CacheTypes.file
     REDIS_CONNECTION_URL: str = ""
 
     @field_validator("USE_CACHE", mode="before")
     def validate_use_cache(cls, value):
-        # Thanks https://stackoverflow.com/a/78157474
+        # Return default if value is an empty string
         if value == "":
-            return cls.model_fields["USE_CACHE"].default
+            return True  # Default value for USE_CACHE
+        return value
 
     @field_validator("CACHE_TYPE", mode="before")
     def validate_cache_type(cls, value):
         # Thanks https://stackoverflow.com/a/78157474
         if value == "":
-            return cls.model_fields["CACHE_TYPE"].default
+            return "file"
+        return value
 
     @model_validator(mode="after")
     def prevent_mismatched_redis_url(self):
@@ -53,7 +55,7 @@ class Config(BaseModel):
         return self
 
 
-config = Config(**environ)  # type: ignore
+config = Config()
 
 headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
