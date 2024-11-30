@@ -12,6 +12,7 @@ dependencies = [
     "ebooklib>=0.18",
     "python-dotenv>=1.0.1",
     "pydantic-settings>=2.6.1",
+    "eliot>=1.16.0",
 ]
 
 [tool.ruff.lint]

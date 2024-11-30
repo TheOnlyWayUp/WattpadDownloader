@@ -1,8 +1,12 @@
 from typing import Optional
 import re
 import unicodedata
+import logging
+from os import environ
 from enum import Enum
 import backoff
+from eliot import to_file, start_action
+from eliot.stdlib import EliotHandler
 from dotenv import load_dotenv
 from ebooklib import epub
 from bs4 import BeautifulSoup
@@ -13,6 +17,16 @@ from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend, RedisBackend
 
 load_dotenv(override=True)
+
+handler = EliotHandler()
+logging.getLogger("fastapi").setLevel(logging.INFO)
+logging.getLogger("fastapi").addHandler(handler)
+
+if environ.get("DEBUG"):
+    to_file(open("eliot.log", "wb"))
+
+logger = logging.Logger("wpd")
+logger.addHandler(handler)
 
 
 class CacheTypes(Enum):
@@ -72,6 +86,8 @@ if config.USE_CACHE:
 else:
     cache = None
 
+logger.info(f"Using {cache=}")
+
 # --- Utilities --- #
 
 
@@ -90,26 +106,27 @@ async def wp_get_cookies(username: str, password: str) -> dict:
     Returns:
         dict: Authorization cookies.
     """
-    async with ClientSession(headers=headers) as session:
-        async with session.post(
-            "https://www.wattpad.com/auth/login?nextUrl=%2F&_data=routes%2Fauth.login",
-            data={
-                "username": username.lower(),
-                "password": password,
-            },  # the username.lower() is for caching
-        ) as response:
-            if response.status != 204:
-                raise ValueError("Not a 204.")
+    with start_action(action_type="api_fetch_cookies"):
+        async with ClientSession(headers=headers) as session:
+            async with session.post(
+                "https://www.wattpad.com/auth/login?nextUrl=%2F&_data=routes%2Fauth.login",
+                data={
+                    "username": username.lower(),
+                    "password": password,
+                },  # the username.lower() is for caching
+            ) as response:
+                if response.status != 204:
+                    raise ValueError("Not a 204.")
 
-            cookies = {
-                k: v.value
-                for k, v in response.cookies.items()  # Thanks https://stackoverflow.com/a/32281245
-            }
+                cookies = {
+                    k: v.value
+                    for k, v in response.cookies.items()  # Thanks https://stackoverflow.com/a/32281245
+                }
 
-            if not cookies:
-                raise ValueError("No cookies.")
+                if not cookies:
+                    raise ValueError("No cookies.")
 
-            return cookies
+                return cookies
 
 
 def slugify(value, allow_unicode=False) -> str:
@@ -141,63 +158,68 @@ def slugify(value, allow_unicode=False) -> str:
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_story_id(part_id: int, cookies: Optional[dict] = None) -> int:
     """Return a Story ID from a Part ID."""
-    async with CachedSession(
-        headers=headers, cache=None if cookies else cache
-    ) as session:  # Don't cache requests with Cookies.
-        async with session.get(
-            f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId"
-        ) as response:
-            response.raise_for_status()
+    with start_action(action_type="api_fetch_storyFromPart"):
+        async with CachedSession(
+            headers=headers, cache=None if cookies else cache
+        ) as session:  # Don't cache requests with Cookies.
+            async with session.get(
+                f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId"
+            ) as response:
+                response.raise_for_status()
 
-            body = await response.json()
+                body = await response.json()
 
-    return body["groupId"]
+        return body["groupId"]
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> dict:
     """Taking a story_id, return its information from the Wattpad API."""
-    async with CachedSession(
-        headers=headers, cache=None if cookies else cache
-    ) as session:  # Don't cache requests with Cookies.
-        async with session.get(
-            f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
-        ) as response:
-            response.raise_for_status()
+    print("using cache", None if cookies else cache)
+    with start_action(action_type="api_fetch_story", story_id=story_id):
+        async with CachedSession(
+            headers=headers, cookies=cookies, cache=None if cookies else cache
+        ) as session:
+            async with session.get(
+                f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
+            ) as response:
+                response.raise_for_status()
 
-            body = await response.json()
+                body = await response.json()
 
-    return body
+        return body
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_part_content(part_id: int, cookies: Optional[dict] = None) -> str:
     """Return the HTML Content of a Part."""
-    async with CachedSession(
-        headers=headers, cache=None if cookies else cache
-    ) as session:  # Don't cache requests with Cookies.
-        async with session.get(
-            f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
-        ) as response:
-            response.raise_for_status()
+    with start_action(action_type="api_fetch_partContent", part_id=part_id):
+        async with CachedSession(
+            headers=headers, cookies=cookies, cache=None if cookies else cache
+        ) as session:
+            async with session.get(
+                f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
+            ) as response:
+                response.raise_for_status()
 
-            body = await response.text()
+                body = await response.text()
 
-    return body
+        return body
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def fetch_cover(url: str, cookies: Optional[dict] = None) -> bytes:
-    """Fetch image bytes."""
-    async with CachedSession(
-        headers=headers, cache=None
-    ) as session:  # Don't cache cover requests.
-        async with session.get(url) as response:
-            response.raise_for_status()
+async def fetch_cover(url: str) -> bytes:
+    """Fetch cover image bytes."""
+    with start_action(action_type="api_fetch_cover", url=url):
+        async with CachedSession(
+            headers=headers, cache=None
+        ) as session:  # Don't cache cover requests.
+            async with session.get(url) as response:
+                response.raise_for_status()
 
-            body = await response.read()
+                body = await response.read()
 
-    return body
+        return body
 
 
 # --- EPUB Generation --- #
@@ -224,7 +246,7 @@ def set_metadata(book, data):
 
 
 async def set_cover(book, data, cookies: Optional[dict] = None):
-    book.set_cover("cover.jpg", await fetch_cover(data["cover"], cookies=cookies))
+    book.set_cover("cover.jpg", await fetch_cover(data["cover"]))
     chapter = epub.EpubHtml(
         file_name="titlepage.xhtml",  # Standard for cover page
     )

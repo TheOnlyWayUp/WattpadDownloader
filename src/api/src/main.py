@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 from io import BytesIO
 from enum import Enum
+from eliot import start_action
 from aiohttp import ClientResponseError
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
@@ -19,7 +20,9 @@ from create_book import (
     slugify,
     wp_get_cookies,
     fetch_story_id,
+    logger,
 )
+
 
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
@@ -60,16 +63,16 @@ class RequestCancelledMiddleware:
         try:
             return await handler_task
         except asyncio.CancelledError:
-            print("Cancelling request due to disconnect")
+            logger.info("Cancelling task as connection closed")
+
+
+app.add_middleware(RequestCancelledMiddleware)
 
 
 class DownloadMode(Enum):
     story = "story"
     part = "part"
     collection = "collection"
-
-
-app.add_middleware(RequestCancelledMiddleware)
 
 
 @app.get("/")
@@ -107,60 +110,73 @@ async def handle_download(
     username: Optional[str] = None,
     password: Optional[str] = None,
 ):
-    if username and not password or password and not username:
-        return HTMLResponse(
-            status_code=422,
-            content='Include both the username <u>and</u> password, or neither. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-        )
-
-    if username and password:
-        # username and password are URL-Encoded by the frontend. FastAPI automatically decodes them.
-        try:
-            cookies = await wp_get_cookies(username=username, password=password)
-        except ValueError:
-            return HTMLResponse(
-                status_code=403,
-                content='Incorrect Username and/or Password. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-            )
-    else:
-        cookies = None
-
-    match mode:
-        case DownloadMode.story:
-            story_id = download_id
-        case DownloadMode.part:
-            story_id = await fetch_story_id(download_id, cookies)
-
-    book = epub.EpubBook()
-
-    metadata = await retrieve_story(story_id, cookies)
-    set_metadata(book, metadata)
-
-    await set_cover(book, metadata, cookies=cookies)
-
-    async for title in add_chapters(
-        book, metadata, download_images=download_images, cookies=cookies
+    with start_action(
+        action_type="download",
+        download_id=download_id,
+        download_images=download_images,
+        mode=mode,
     ):
-        ...
+        if username and not password or password and not username:
+            logger.error(
+                "Username with no Password or Password with no Username provided."
+            )
+            return HTMLResponse(
+                status_code=422,
+                content='Include both the username <u>and</u> password, or neither. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
 
-    # Book is compiled
-    temp_file = tempfile.NamedTemporaryFile(
-        suffix=".epub", delete=True
-    )  # Thanks https://stackoverflow.com/a/75398222
+        if username and password:
+            # username and password are URL-Encoded by the frontend. FastAPI automatically decodes them.
+            try:
+                cookies = await wp_get_cookies(username=username, password=password)
+            except ValueError:
+                logger.error("Invalid username or password.")
+                return HTMLResponse(
+                    status_code=403,
+                    content='Incorrect Username and/or Password. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+                )
+        else:
+            cookies = None
 
-    # create epub file
-    epub.write_epub(temp_file, book, {})
+        match mode:
+            case DownloadMode.story:
+                story_id = download_id
+            case DownloadMode.part:
+                story_id = await fetch_story_id(download_id, cookies)
 
-    temp_file.file.seek(0)
-    book_data = temp_file.file.read()
+        logger.error(f"Retrieved story id ({story_id=})")
 
-    return StreamingResponse(
-        BytesIO(book_data),
-        media_type="application/epub+zip",
-        headers={
-            "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
-        },
-    )
+        book = epub.EpubBook()
+
+        metadata = await retrieve_story(story_id, cookies)
+        set_metadata(book, metadata)
+
+        await set_cover(book, metadata, cookies=cookies)
+
+        async for title in add_chapters(
+            book, metadata, download_images=download_images, cookies=cookies
+        ):
+            print(title)
+            ...
+
+        # Book is compiled
+        temp_file = tempfile.NamedTemporaryFile(
+            suffix=".epub", delete=True
+        )  # Thanks https://stackoverflow.com/a/75398222
+
+        # create epub file
+        epub.write_epub(temp_file, book, {})
+
+        temp_file.file.seek(0)
+        book_data = temp_file.file.read()
+
+        return StreamingResponse(
+            BytesIO(book_data),
+            media_type="application/epub+zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}_{"images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+            },
+        )
 
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
@@ -169,4 +185,4 @@ app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=80)
+    uvicorn.run("main:app", host="0.0.0.0", port=8086, workers=24)
