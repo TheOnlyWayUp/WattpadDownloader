@@ -1,20 +1,59 @@
-import asyncio
 from typing import Optional
-from ebooklib import epub
-import unicodedata
+from dotenv import load_dotenv
+
+load_dotenv()
 import re
+import unicodedata
+from os import environ
+from enum import Enum
 import backoff
+from ebooklib import epub
+from bs4 import BeautifulSoup
+from pydantic import BaseModel, model_validator
 from aiohttp import ClientResponseError, ClientSession
 from aiohttp_client_cache.session import CachedSession
-from aiohttp_client_cache import FileBackend
-from bs4 import BeautifulSoup
+from aiohttp_client_cache import FileBackend, RedisBackend
 
+
+class CacheTypes(Enum):
+    file = "file"
+    redis = "redis"
+
+
+class Config(BaseModel):
+    USE_CACHE: bool = True
+    CACHE_TYPE: CacheTypes = CacheTypes.file
+    REDIS_CONNECTION_URL: str = ""
+
+    @model_validator(mode="after")
+    def prevent_empty_redis_url(self):
+        match self.CACHE_TYPE:
+            case CacheTypes.file:
+                if self.REDIS_CONNECTION_URL:
+                    raise ValueError(
+                        "REDIS_CONNECTION_URL provided when File cache selected. To use Redis as a cache, set CACHE_TYPE=redis."
+                    )
+            case CacheTypes.redis:
+                if not self.REDIS_CONNECTION_URL:
+                    raise ValueError(
+                        "REDIS_CONNECTION_URL not provided when Redis cache selected. To use File cache, set CACHE_TYPE=file."
+                    )
+        return self
+
+
+config = Config(**environ)  # type: ignore
 
 headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
 }
 
-cache = FileBackend(use_temp=True, expire_after=43200)  # 12 hours
+match config.CACHE_TYPE:
+    case CacheTypes.file:
+        cache = FileBackend(use_temp=True, expire_after=43200)  # 12 hours
+    case CacheTypes.redis:
+        cache = RedisBackend(
+            cache_name="wpd-aiohttp-cache", address=config.REDIS_CONNECTION_URL
+        )
 
 # --- Utilities --- #
 
@@ -178,7 +217,7 @@ def set_metadata(book, data):
 async def set_cover(book, data, cookies: Optional[dict] = None):
     book.set_cover("cover.jpg", await fetch_cover(data["cover"], cookies=cookies))
     chapter = epub.EpubHtml(
-        file_name=f"titlepage.xhtml",  # Standard for cover page
+        file_name="titlepage.xhtml",  # Standard for cover page
     )
     chapter.set_content('<img src="cover.jpg">')
 
