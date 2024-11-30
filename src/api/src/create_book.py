@@ -9,7 +9,7 @@ from enum import Enum
 import backoff
 from ebooklib import epub
 from bs4 import BeautifulSoup
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
 from aiohttp import ClientResponseError, ClientSession
 from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend, RedisBackend
@@ -25,8 +25,20 @@ class Config(BaseModel):
     CACHE_TYPE: CacheTypes = CacheTypes.file
     REDIS_CONNECTION_URL: str = ""
 
+    @field_validator("USE_CACHE", mode="before")
+    def validate_use_cache(cls, value):
+        # Thanks https://stackoverflow.com/a/78157474
+        if value == "":
+            return cls.model_fields["USE_CACHE"].default
+
+    @field_validator("CACHE_TYPE", mode="before")
+    def validate_cache_type(cls, value):
+        # Thanks https://stackoverflow.com/a/78157474
+        if value == "":
+            return cls.model_fields["CACHE_TYPE"].default
+
     @model_validator(mode="after")
-    def prevent_empty_redis_url(self):
+    def prevent_mismatched_redis_url(self):
         match self.CACHE_TYPE:
             case CacheTypes.file:
                 if self.REDIS_CONNECTION_URL:
@@ -47,13 +59,16 @@ headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
 }
 
-match config.CACHE_TYPE:
-    case CacheTypes.file:
-        cache = FileBackend(use_temp=True, expire_after=43200)  # 12 hours
-    case CacheTypes.redis:
-        cache = RedisBackend(
-            cache_name="wpd-aiohttp-cache", address=config.REDIS_CONNECTION_URL
-        )
+if config.USE_CACHE:
+    match config.CACHE_TYPE:
+        case CacheTypes.file:
+            cache = FileBackend(use_temp=True, expire_after=43200)  # 12 hours
+        case CacheTypes.redis:
+            cache = RedisBackend(
+                cache_name="wpd-aiohttp-cache", address=config.REDIS_CONNECTION_URL
+            )
+else:
+    cache = None
 
 # --- Utilities --- #
 
