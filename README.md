@@ -26,14 +26,15 @@ Stars ⭐ are appreciated. Thanks!
 That's it! You can use your instance at `http://localhost:5042`. API Documentation is available at `http://localhost:5042/docs`.
 
 ### Concurrent Requests
-The file-based cache struggles with concurrent requests (discussed in #2 and #22). If you're downloading a large number of books concurrently, switch to the Redis cache. Assuming you've built the image already:
-1. Fill the .env file
+The file-based cache struggles with concurrent requests (discussed in TheOnlyWayUp/WattpadDownloader#2 and TheOnlyWayUp/WattpadDownloader#22). If you're downloading a large number of books concurrently, switch to the Redis cache. Assuming you've built the image already:
+1. Fill the .env file. Localhost will not work in a docker container unless [`host.docker.internal`](https://docs.docker.com/desktop/features/networking/#i-want-to-connect-from-a-container-to-a-service-on-the-host) or a platform-specific variant is provided.
 ```
 USE_CACHE=true
 CACHE_TYPE=redis
 REDIS_CONNECTION_URL=redis://username:password@host:port
 ```
-Localhost will not work in a docker container unless [`host.docker.internal`](https://docs.docker.com/desktop/features/networking/#i-want-to-connect-from-a-container-to-a-service-on-the-host) or a platform variant is specified.
+
+
 2. Run the container and supply the .env file, `docker run -d -p 5042:80 --env-file .env wp_downloader`
 Alternatively, if Redis is running on localhost
 2. Modify your `.env` file, replacing `localhost` with `host.docker.internal`. `redis://localhost:6379` should become `redis://host.docker.internal:6379`. Then, start the container, `docker run -d -p 5042:80 --env-file .env --add-host host.docker.internal:host-gateway wp_downloader`
