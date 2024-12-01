@@ -41,7 +41,7 @@
 
         if (input_url.includes("/story/")) {
           // https://wattpad.com/story/237369078-wattpad-books-presents
-          input_url = input_url.split("-")[0].split("/story/")[1]; // removes tracking fields and title
+          input_url = input_url.split("-")[0].split("?")[0].split("/story/")[1]; // removes tracking fields and title
           download_id = input_url;
           mode = "story";
         } else if (input_url.includes("/stories/")) {
@@ -51,7 +51,7 @@
           mode = "story";
         } else {
           // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
-          input_url = input_url.split("-")[0].split("wattpad.com/")[1]; // removes tracking fields and title
+          input_url = input_url.split("-")[0].split("?")[0].split("wattpad.com/")[1]; // removes tracking fields and title
           download_id = input_url;
           if (/^\d+$/.test(download_id)) {
             // If "wattpad.com/{download_id}" contains only numbers
