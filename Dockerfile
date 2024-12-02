@@ -12,6 +12,10 @@ RUN npm run build
 FROM python:3.10-slim
 
 WORKDIR /app
+
+# Install git
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 COPY src/api/requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY --from=0 /build/build /app/build
