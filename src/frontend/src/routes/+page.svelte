@@ -200,12 +200,6 @@
               </label>
             </div>
           </form>
-
-          <button
-            data-feedback-fish
-            class="link pb-4"
-            data-umami-event="Feedback">Feedback</button
-          >
         </div>
       {:else}
         <div class="text-center max-w-4xl">
