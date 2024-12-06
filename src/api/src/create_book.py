@@ -412,9 +412,6 @@ class EPUBGenerator:
         return temp_file
 
 
-from reportlab.pdfgen.canvas import Canvas
-
-
 class PDFGenerator:
     def __init__(self, data: Story, cover: bytes):
         self.data = data
@@ -432,7 +429,9 @@ class PDFGenerator:
                 "title"
             ]  # Yield the chapter's title upon insertion preceeded by retrieval.
 
-        pdf = pdfkit.from_file(chapters[1].file.name, self.file.name)
+        pdf = pdfkit.from_file(
+            [chapter.file.name for chapter in chapters], self.file.name
+        )
         # self.canvas.drawString(72, 72, content)
 
     def dump(self) -> PDFGenerator:
