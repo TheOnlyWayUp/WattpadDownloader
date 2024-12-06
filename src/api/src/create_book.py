@@ -1,12 +1,16 @@
+from __future__ import annotations
 from typing import List, Optional, Tuple
 from typing_extensions import TypedDict
 import re
 import json
-import unicodedata
 import logging
+import tempfile
+import unicodedata
+from io import BytesIO, StringIO
 from os import environ
 from enum import Enum
 import backoff
+import pdfkit
 from eliot import to_file, start_action
 from eliot.stdlib import EliotHandler
 from dotenv import load_dotenv
@@ -123,7 +127,7 @@ def slugify(value, allow_unicode=False) -> str:
     return re.sub(r"[-\s]+", "-", value).strip("-_")
 
 
-async def wp_get_cookies(username: str, password: str) -> dict:
+async def fetch_cookies(username: str, password: str) -> dict:
     # source: https://github.com/TheOnlyWayUp/WP-DM-Export/blob/dd4c7c51cb43f2108e0f63fc10a66cd24a740e4e/src/API/src/main.py#L25-L58
     """Retrieves authorization cookies from Wattpad by logging in with user creds.
 
@@ -241,7 +245,7 @@ async def fetch_story_from_partId(
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> Story:
+async def fetch_story(story_id: int, cookies: Optional[dict] = None) -> Story:
     """Taking a story_id, return its information from the Wattpad API."""
     with start_action(action_type="api_fetch_story", story_id=story_id):
         async with CachedSession(
@@ -308,9 +312,10 @@ async def fetch_cover(url: str) -> bytes:
 
 
 class EPUBGenerator:
-    def __init__(self, epub: EpubBook, data: Story):
-        self.epub = epub
+    def __init__(self, data: Story, cover: bytes):
+        self.epub = epub.EpubBook()
         self.data = data
+        self.cover = cover
 
         # set metadata
         self.epub.add_author(data["user"]["username"])
@@ -334,23 +339,18 @@ class EPUBGenerator:
             {"name": "completed", "content": str(int(data["completed"]))},
         )
 
-    async def set_cover(self) -> None:
-        """Set book cover."""
-        self.epub.set_cover("cover.jpg", await fetch_cover(self.data["cover"]))
-        chapter = epub.EpubHtml(
+        # Set book cover
+        self.epub.set_cover("cover.jpg", cover)
+        cover_chapter = epub.EpubHtml(
             file_name="titlepage.xhtml",  # Standard for cover page
         )
-        chapter.set_content('<img src="cover.jpg">')
+        cover_chapter.set_content('<img src="cover.jpg">')
+        self.epub.add_item(cover_chapter)
 
-    async def add_chapters(
-        self,
-        download_images: bool = False,
-        cookies: Optional[dict] = None,
-    ):
+    async def add_chapters(self, contents: List[str], download_images: bool = False):
         chapters = []
 
-        for cidx, part in enumerate(self.data["parts"]):
-            content = await fetch_part_content(part["id"], cookies=cookies)
+        for cidx, (part, content) in enumerate(zip(self.data["parts"], contents)):
             title = part["title"]
 
             # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
@@ -384,7 +384,7 @@ class EPUBGenerator:
                                 str(image["src"]), f"static/{cidx}/{idx}.jpeg"
                             )
 
-            chapter.set_content(f"<h1>{title}</h1>" + content)
+            chapter.set_content(content)
 
             chapters.append(chapter)
 
@@ -401,3 +401,43 @@ class EPUBGenerator:
 
         # create spine
         self.epub.spine = ["nav"] + chapters
+
+    def dump(self) -> tempfile._TemporaryFileWrapper[bytes]:
+        # Thanks https://stackoverflow.com/a/75398222
+        temp_file = tempfile.NamedTemporaryFile(suffix=".epub", delete=True)
+        epub.write_epub(temp_file, self.epub)
+
+        temp_file.file.seek(0)
+
+        return temp_file
+
+
+from reportlab.pdfgen.canvas import Canvas
+
+
+class PDFGenerator:
+    def __init__(self, data: Story, cover: bytes):
+        self.data = data
+        self.file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=True)
+        # self.canvas = Canvas(self.file)
+
+    async def add_chapters(self, contents: List[str], download_images: bool = False):
+        chapters = []
+
+        for cidx, (part, content) in enumerate(zip(self.data["parts"], contents)):
+            tempie = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
+            tempie.write(content.encode())
+            chapters.append(tempie)
+            yield part[
+                "title"
+            ]  # Yield the chapter's title upon insertion preceeded by retrieval.
+
+        pdf = pdfkit.from_file(chapters[1].file.name, self.file.name)
+        # self.canvas.drawString(72, 72, content)
+
+    def dump(self) -> PDFGenerator:
+        # self.canvas.save()
+
+        self.file.seek(0)
+
+        return self

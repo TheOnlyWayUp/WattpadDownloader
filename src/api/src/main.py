@@ -2,7 +2,6 @@
 
 from typing import Optional
 import asyncio
-import tempfile
 from pathlib import Path
 from io import BytesIO
 from enum import Enum
@@ -13,11 +12,16 @@ from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from ebooklib import epub
 from create_book import (
-    retrieve_story,
     EPUBGenerator,
-    slugify,
-    wp_get_cookies,
+    PDFGenerator,
+    fetch_story,
     fetch_story_from_partId,
+    fetch_part_content,
+    fetch_cover,
+    fetch_cookies,
+    WattpadError,
+    StoryNotFoundError,
+    slugify,
     logger,
 )
 
@@ -126,6 +130,7 @@ async def handle_download(
         action_type="download",
         download_id=download_id,
         download_images=download_images,
+        format=format,
         mode=mode,
     ):
         if username and not password or password and not username:
@@ -140,7 +145,7 @@ async def handle_download(
         if username and password:
             # username and password are URL-Encoded by the frontend. FastAPI automatically decodes them.
             try:
-                cookies = await wp_get_cookies(username=username, password=password)
+                cookies = await fetch_cookies(username=username, password=password)
             except ValueError:
                 logger.error("Invalid username or password.")
                 return HTMLResponse(
@@ -153,43 +158,44 @@ async def handle_download(
         match mode:
             case DownloadMode.story:
                 story_id = download_id
-                metadata = await retrieve_story(story_id, cookies)
+                metadata = await fetch_story(story_id, cookies)
             case DownloadMode.part:
                 story_id, metadata = await fetch_story_from_partId(download_id, cookies)
 
         logger.info(f"Retrieved story id ({story_id=})")
 
+        cover_data = await fetch_cover(metadata["cover"])
+        part_contents = [
+            f"<h1>{part['title']}</h1>"
+            + (await fetch_part_content(part["id"], cookies=cookies))
+            for part in metadata["parts"]
+        ]
+
         match format:
             case DownloadFormat.epub:
-                book = EPUBGenerator(epub.EpubBook(), metadata)
-                await book.set_cover()
-
-                async for title in book.add_chapters(
-                    download_images=download_images, cookies=cookies
-                ):
-                    ...
-
-                # Book is compiled
-                temp_file = tempfile.NamedTemporaryFile(
-                    suffix=".epub", delete=True
-                )  # Thanks https://stackoverflow.com/a/75398222
-
-                # create epub file
-                epub.write_epub(temp_file, book.epub, {})
-
-                temp_file.file.seek(0)
-                book_data = temp_file.file.read()
-
-                return StreamingResponse(
-                    BytesIO(book_data),
-                    media_type="application/epub+zip",
-                    headers={
-                        "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
-                    },
-                )
-
+                book = EPUBGenerator(metadata, cover_data)
             case DownloadFormat.pdf:
-                ...
+                book = PDFGenerator(metadata, cover_data)
+
+        async for title in book.add_chapters(
+            part_contents, download_images=download_images
+        ):
+            print(title)
+
+        book_bytes = book.dump().file.read()
+        match format:
+            case DownloadFormat.epub:
+                media_type = "application/epub+zip"
+            case DownloadFormat.pdf:
+                media_type = "application/pdf"
+
+        return StreamingResponse(
+            BytesIO(book_bytes),
+            media_type=media_type,
+            headers={
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format}"'  # Thanks https://stackoverflow.com/a/72729058
+            },
+        )
 
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
