@@ -22,7 +22,7 @@ ENV WKHTML2PDF_VERSION='0.12.6-1'
 RUN apt install -y build-essential xorg libssl-dev libxrender-dev wget
 RUN wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTML2PDF_VERSION}/wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb"
 RUN sudo apt install -y ./wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb
-
+RUN rm wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb
 RUN rm -rf /var/lib/apt/lists/*
 
 # --- #
