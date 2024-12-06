@@ -39,6 +39,10 @@ REDIS_CONNECTION_URL=redis://username:password@host:port
 Alternatively, if Redis is running on localhost
 2. Modify your `.env` file, replacing `localhost` with `host.docker.internal`. `redis://localhost:6379` should become `redis://host.docker.internal:6379`. Then, start the container, `docker run -d -p 5042:80 --env-file .env --add-host host.docker.internal:host-gateway wp_downloader`
 
+## Development
+- Developers, ensure you have `wkhtmltopdf` available on your PATH. 
+- Run `wkhtmltopdf` on your terminal, if you see "Reduced Functionality", run [this script](https://raw.githubusercontent.com/JazzCore/python-pdfkit/b7bf798b946fa5655f8e82f0d80dec6b6b13d414/ci/before-script.sh) to install a fully featured compilation of `wkhtmltopdf.
+
 ---
 
 My thanks to [aerkalov/ebooklib](https://github.com/aerkalov/ebooklib) for a fast and well-documented package.
