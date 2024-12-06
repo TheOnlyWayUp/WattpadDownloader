@@ -14,9 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from ebooklib import epub
 from create_book import (
     retrieve_story,
-    set_cover,
-    set_metadata,
-    add_chapters,
+    EPUBGenerator,
     slugify,
     wp_get_cookies,
     fetch_story_from_partId,
@@ -69,6 +67,11 @@ class RequestCancelledMiddleware:
 app.add_middleware(RequestCancelledMiddleware)
 
 
+class DownloadFormat(Enum):
+    pdf = "pdf"
+    epub = "epub"
+
+
 class DownloadMode(Enum):
     story = "story"
     part = "part"
@@ -106,6 +109,7 @@ async def handle_download(
     download_id: int,
     download_images: bool = False,
     mode: DownloadMode = DownloadMode.story,
+    format: DownloadFormat = DownloadFormat.epub,
     username: Optional[str] = None,
     password: Optional[str] = None,
 ):
@@ -146,33 +150,37 @@ async def handle_download(
 
         logger.info(f"Retrieved story id ({story_id=})")
 
-        book = epub.EpubBook()
-        set_metadata(book, metadata)
-        await set_cover(book, metadata)
+        match format:
+            case DownloadFormat.epub:
+                book = EPUBGenerator(epub.EpubBook(), metadata)
+                await book.set_cover()
 
-        async for title in add_chapters(
-            book, metadata, download_images=download_images, cookies=cookies
-        ):
-            ...
+                async for title in book.add_chapters(
+                    download_images=download_images, cookies=cookies
+                ):
+                    ...
 
-        # Book is compiled
-        temp_file = tempfile.NamedTemporaryFile(
-            suffix=".epub", delete=True
-        )  # Thanks https://stackoverflow.com/a/75398222
+                # Book is compiled
+                temp_file = tempfile.NamedTemporaryFile(
+                    suffix=".epub", delete=True
+                )  # Thanks https://stackoverflow.com/a/75398222
 
-        # create epub file
-        epub.write_epub(temp_file, book, {})
+                # create epub file
+                epub.write_epub(temp_file, book.epub, {})
 
-        temp_file.file.seek(0)
-        book_data = temp_file.file.read()
+                temp_file.file.seek(0)
+                book_data = temp_file.file.read()
 
-        return StreamingResponse(
-            BytesIO(book_data),
-            media_type="application/epub+zip",
-            headers={
-                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
-            },
-        )
+                return StreamingResponse(
+                    BytesIO(book_data),
+                    media_type="application/epub+zip",
+                    headers={
+                        "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+                    },
+                )
+
+            case DownloadFormat.pdf:
+                ...
 
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")

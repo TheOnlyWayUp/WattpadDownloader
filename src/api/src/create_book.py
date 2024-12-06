@@ -269,93 +269,97 @@ async def fetch_cover(url: str) -> bytes:
 # --- EPUB Generation --- #
 
 
-def set_metadata(book: EpubBook, data: Story) -> None:
-    """Set book metadata."""
-    book.add_author(data["user"]["username"])
+class EPUBGenerator:
+    def __init__(self, epub: EpubBook, data: Story):
+        self.epub = epub
+        self.data = data
 
-    book.add_metadata("DC", "title", data["title"])
-    book.add_metadata("DC", "description", data["description"])
-    book.add_metadata("DC", "date", data["createDate"])
-    book.add_metadata("DC", "modified", data["modifyDate"])
-    book.add_metadata("DC", "language", data["language"]["name"])
+        # set metadata
+        self.epub.add_author(data["user"]["username"])
 
-    book.add_metadata(
-        None, "meta", "", {"name": "tags", "content": ", ".join(data["tags"])}
-    )
-    book.add_metadata(
-        None, "meta", "", {"name": "mature", "content": str(int(data["mature"]))}
-    )
-    book.add_metadata(
-        None, "meta", "", {"name": "completed", "content": str(int(data["completed"]))}
-    )
+        self.epub.add_metadata("DC", "title", data["title"])
+        self.epub.add_metadata("DC", "description", data["description"])
+        self.epub.add_metadata("DC", "date", data["createDate"])
+        self.epub.add_metadata("DC", "modified", data["modifyDate"])
+        self.epub.add_metadata("DC", "language", data["language"]["name"])
 
-
-async def set_cover(book: EpubBook, data: Story) -> None:
-    """Set book cover."""
-    book.set_cover("cover.jpg", await fetch_cover(data["cover"]))
-    chapter = epub.EpubHtml(
-        file_name="titlepage.xhtml",  # Standard for cover page
-    )
-    chapter.set_content('<img src="cover.jpg">')
-
-
-async def add_chapters(
-    book: EpubBook,
-    data: Story,
-    download_images: bool = False,
-    cookies: Optional[dict] = None,
-):
-    chapters = []
-
-    for cidx, part in enumerate(data["parts"]):
-        content = await fetch_part_content(part["id"], cookies=cookies)
-        title = part["title"]
-
-        # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
-        chapter = epub.EpubHtml(
-            title=title,
-            file_name=f"{cidx}.xhtml",  # Used to be clean_title.xhtml, but that broke Arabic support as slugify turns arabic strings into '', leading to multiple files with the same name, breaking those chapters.
-            lang=data["language"]["name"],
+        self.epub.add_metadata(
+            None, "meta", "", {"name": "tags", "content": ", ".join(data["tags"])}
+        )
+        self.epub.add_metadata(
+            None, "meta", "", {"name": "mature", "content": str(int(data["mature"]))}
+        )
+        self.epub.add_metadata(
+            None,
+            "meta",
+            "",
+            {"name": "completed", "content": str(int(data["completed"]))},
         )
 
-        if download_images:
-            soup = BeautifulSoup(content, "lxml")
+    async def set_cover(self) -> None:
+        """Set book cover."""
+        self.epub.set_cover("cover.jpg", await fetch_cover(self.data["cover"]))
+        chapter = epub.EpubHtml(
+            file_name="titlepage.xhtml",  # Standard for cover page
+        )
+        chapter.set_content('<img src="cover.jpg">')
 
-            async with CachedSession(
-                headers=headers, cache=None
-            ) as session:  # Don't cache images.
-                for idx, image in enumerate(soup.find_all("img")):
-                    if not image["src"]:
-                        continue
-                    # Find all image tags and filter for those with sources
+    async def add_chapters(
+        self,
+        download_images: bool = False,
+        cookies: Optional[dict] = None,
+    ):
+        chapters = []
 
-                    async with session.get(image["src"]) as response:
-                        img = epub.EpubImage(
-                            media_type="image/jpeg",
-                            content=await response.read(),
-                            file_name=f"static/{cidx}/{idx}.jpeg",
-                        )
-                        book.add_item(img)
-                        # Fetch image and pack
+        for cidx, part in enumerate(self.data["parts"]):
+            content = await fetch_part_content(part["id"], cookies=cookies)
+            title = part["title"]
 
-                        content = content.replace(
-                            str(image["src"]), f"static/{cidx}/{idx}.jpeg"
-                        )
+            # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
+            chapter = epub.EpubHtml(
+                title=title,
+                file_name=f"{cidx}.xhtml",  # Used to be clean_title.xhtml, but that broke Arabic support as slugify turns arabic strings into '', leading to multiple files with the same name, breaking those chapters.
+                lang=self.data["language"]["name"],
+            )
 
-        chapter.set_content(f"<h1>{title}</h1>" + content)
+            if download_images:
+                soup = BeautifulSoup(content, "lxml")
 
-        chapters.append(chapter)
+                async with CachedSession(
+                    headers=headers, cache=None
+                ) as session:  # Don't cache images.
+                    for idx, image in enumerate(soup.find_all("img")):
+                        if not image["src"]:
+                            continue
+                        # Find all image tags and filter for those with sources
 
-        yield title  # Yield the chapter's title upon insertion preceeded by retrieval.
+                        async with session.get(image["src"]) as response:
+                            img = epub.EpubImage(
+                                media_type="image/jpeg",
+                                content=await response.read(),
+                                file_name=f"static/{cidx}/{idx}.jpeg",
+                            )
+                            self.epub.add_item(img)
+                            # Fetch image and pack
 
-    for chapter in chapters:
-        book.add_item(chapter)
+                            content = content.replace(
+                                str(image["src"]), f"static/{cidx}/{idx}.jpeg"
+                            )
 
-    book.toc = chapters
+            chapter.set_content(f"<h1>{title}</h1>" + content)
 
-    # Thanks https://github.com/aerkalov/ebooklib/blob/master/samples/09_create_image/create.py
-    book.add_item(epub.EpubNcx())
-    book.add_item(epub.EpubNav())
+            chapters.append(chapter)
 
-    # create spine
-    book.spine = ["nav"] + chapters
+            yield title  # Yield the chapter's title upon insertion preceeded by retrieval.
+
+        for chapter in chapters:
+            self.epub.add_item(chapter)
+
+        self.epub.toc = chapters
+
+        # Thanks https://github.com/aerkalov/ebooklib/blob/master/samples/09_create_image/create.py
+        self.epub.add_item(epub.EpubNcx())
+        self.epub.add_item(epub.EpubNav())
+
+        # create spine
+        self.epub.spine = ["nav"] + chapters
