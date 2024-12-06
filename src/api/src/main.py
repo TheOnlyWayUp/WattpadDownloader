@@ -104,6 +104,15 @@ def download_error_handler(request: Request, exception: ClientResponseError):
             )
 
 
+@app.exception_handler(WattpadError)
+def download_wp_error_handler(request: Request, exception: WattpadError):
+    if isinstance(exception, StoryNotFoundError):
+        return HTMLResponse(
+            status_code=404,
+            content='This story does not exist, or has been deleted. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+        )
+
+
 @app.get("/download/{download_id}")
 async def handle_download(
     download_id: int,

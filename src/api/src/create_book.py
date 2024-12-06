@@ -1,6 +1,7 @@
 from typing import List, Optional, Tuple
 from typing_extensions import TypedDict
 import re
+import json
 import unicodedata
 import logging
 from os import environ
@@ -195,6 +196,22 @@ class Story(TypedDict):
 
 story_ta = TypeAdapter(Story)
 
+# --- Exceptions --- #
+
+
+class WattpadError(Exception):
+    """Base Exception class for Wattpad related errors."""
+
+
+class StoryNotFoundError(WattpadError):
+    """Display the "This story was not found" error to the user."""
+
+    ...
+
+
+class PartNotFoundError(StoryNotFoundError): ...
+
+
 # --- API Calls --- #
 
 
@@ -210,9 +227,15 @@ async def fetch_story_from_partId(
             async with session.get(
                 f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId,group(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover)"
             ) as response:
-                response.raise_for_status()
-
                 body = await response.json()
+
+                if response.status == 400:
+                    match body.get("error_code"):
+                        case 1020:  # "Story part not found"
+                            logger.info(f"{part_id=} not found on Wattpad, returning.")
+                            raise PartNotFoundError()
+
+                response.raise_for_status()
 
         return str(body["groupId"]), story_ta.validate_python(body["group"])
 
@@ -227,9 +250,15 @@ async def retrieve_story(story_id: int, cookies: Optional[dict] = None) -> Story
             async with session.get(
                 f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
             ) as response:
-                response.raise_for_status()
-
                 body = await response.json()
+
+                if response.status == 400:
+                    match body.get("error_code"):
+                        case 1017:  # "Story not found"
+                            logger.info(f"{story_id=} not found on Wattpad, returning.")
+                            raise StoryNotFoundError()
+
+                response.raise_for_status()
 
         return story_ta.validate_python(body)
 
@@ -244,9 +273,18 @@ async def fetch_part_content(part_id: int, cookies: Optional[dict] = None) -> st
             async with session.get(
                 f"https://www.wattpad.com/apiv2/?m=storytext&id={part_id}"
             ) as response:
-                response.raise_for_status()
-
                 body = await response.text()
+
+                if response.status == 400:
+                    data = json.loads(body)
+                    match data.get("code"):
+                        case 463:  # ""Could not find any parts for that story""
+                            logger.info(
+                                f"{part_id=} for text not found on Wattpad, returning."
+                            )
+                            raise PartNotFoundError()
+
+                response.raise_for_status()
 
         return body
 
