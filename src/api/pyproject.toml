@@ -17,6 +17,7 @@ dependencies = [
     "aiohttp-client-cache[all]",
     "bs4>=0.0.2",
     "uvicorn>=0.32.1",
+    "pdfkit>=1.0.0",
 ]
 
 [tool.ruff.lint]
