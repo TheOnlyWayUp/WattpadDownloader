@@ -16,6 +16,7 @@ from eliot.stdlib import EliotHandler
 from dotenv import load_dotenv
 from ebooklib import epub
 from ebooklib.epub import EpubBook
+from exiftool import ExifTool
 from bs4 import BeautifulSoup
 from pydantic import TypeAdapter, model_validator, field_validator
 from pydantic_settings import BaseSettings
@@ -421,22 +422,77 @@ class PDFGenerator:
     async def add_chapters(self, contents: List[str], download_images: bool = False):
         chapters = []
 
-        for cidx, (part, content) in enumerate(zip(self.data["parts"], contents)):
-            tempie = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
-            tempie.write(content.encode())
-            chapters.append(tempie)
-            yield part[
-                "title"
-            ]  # Yield the chapter's title upon insertion preceeded by retrieval.
+        for part, content in zip(self.data["parts"], contents):
+            html = BeautifulSoup(content)
 
-        pdf = pdfkit.from_file(
-            [chapter.file.name for chapter in chapters], self.file.name
+            image_sources: List[str] = []
+            for image_container in html.find_all("p", {"data-media-type": "image"}):
+                img = image_container.findChild("img")
+                source = img.get("src")
+                image_container.replace_with(img)
+                image_sources.append(source)
+
+            writable_html = str(html)
+            if download_images:
+                async with CachedSession(cache=None) as session:  # Don't cache images
+                    for image_url in image_sources:
+                        async with session.get(image_url) as response:
+                            response.raise_for_status()
+
+                            image = await response.read()
+                            temp_img = tempfile.NamedTemporaryFile(
+                                suffix=".jpg", delete=False
+                            )
+                            temp_img.write(image)
+
+                            writable_html = writable_html.replace(
+                                image_url, f"file://{temp_img.file.name}"
+                            )
+                            print("Replaced", image_url, "with", temp_img.file.name)
+
+            tempie = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
+            tempie.write(writable_html.encode())
+            print(writable_html)
+
+            chapters.append(tempie)
+
+            yield part["title"]
+
+        pdfkit.from_file(
+            [chapter.file.name for chapter in chapters],
+            self.file.name,
+            options={
+                "enable-local-file-access": None,
+                "images": download_images,
+                "title": self.data["title"],
+            },
         )
-        # self.canvas.drawString(72, 72, content)
+
+        clean_description = self.data["description"].strip().replace("\n", "$/")
+        metadata = {
+            "Author": self.data["user"]["username"],
+            "Title": self.data["title"],
+            "Subject": clean_description,
+            "CreationDate": self.data["createDate"],
+            "ModDate": self.data["modifyDate"],
+            "Keywords": ",".join(self.data["tags"]),
+            "Language": self.data["language"]["name"],
+            "Completed": self.data["completed"],
+            "MatureContent": self.data["mature"],
+            "Producer": "Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader",
+        }  # As per https://exiftool.org/TagNames/PDF.html
+        with ExifTool(config_file="../exiftool.config", logger=logger) as et:
+            et.execute(
+                *(
+                    [f"-{key}={value}" for key, value in metadata.items()]
+                    + [
+                        "-overwrite_original",
+                        self.file.file.name,
+                    ]
+                )
+            )
 
     def dump(self) -> PDFGenerator:
-        # self.canvas.save()
-
         self.file.seek(0)
 
         return self
