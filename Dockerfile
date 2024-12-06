@@ -23,14 +23,28 @@ RUN apt install -y build-essential xorg libssl-dev libxrender-dev wget
 RUN wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTML2PDF_VERSION}/wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb"
 RUN sudo apt install -y ./wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb
 RUN rm wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb
-RUN rm -rf /var/lib/apt/lists/*
+
+ENV EXIFTOOL_VERSION="13.06"
+RUN wget "https://exiftool.org/Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz"
+RUN gzip "Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz" | tar -xf -
+WORKDIR /app/Image-ExifTool-${EXIFTOOL_VERSION}
+RUN perl Makefile.PL
+RUN make test
+RUN sudo make install
+
+RUN rm -rf /var/lib/apt/lists/* /app/Image-ExifTool-${EXIFTOOL_VERSION}
+
+WORKDIR /app
 
 # --- #
 
 COPY src/api/requirements.txt requirements.txt
+COPY src/api/exiftool.config exiftool.config
 RUN pip3 install -r requirements.txt
-COPY --from=0 /build/build /app/build
-COPY src/api/src .
+COPY --from=0 /build/build /app/src/build
+COPY src/api/src src
+
+WORKDIR /app/src
 
 EXPOSE 80
 # ENV PORT=80
