@@ -7,8 +7,13 @@ from io import BytesIO
 from enum import Enum
 from eliot import start_action
 from aiohttp import ClientResponseError
-from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi import FastAPI
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from create_book import (
     EPUBGenerator,
@@ -196,6 +201,11 @@ async def handle_download(
                 "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"'  # Thanks https://stackoverflow.com/a/72729058
             },
         )
+
+
+@app.get("/donate")
+def donate():
+    return RedirectResponse("https://buymeacoffee.com/theonlywayup")
 
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
