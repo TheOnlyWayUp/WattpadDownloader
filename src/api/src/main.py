@@ -87,7 +87,7 @@ def home():
 
 
 @app.exception_handler(ClientResponseError)
-def download_error_handler(request: Request, exception: ClientResponseError):
+def download_error_handler(exception: ClientResponseError):
     match exception.status:
         case 400 | 404:
             return HTMLResponse(
@@ -109,7 +109,7 @@ def download_error_handler(request: Request, exception: ClientResponseError):
 
 
 @app.exception_handler(WattpadError)
-def download_wp_error_handler(request: Request, exception: WattpadError):
+def download_wp_error_handler(exception: WattpadError):
     if isinstance(exception, StoryNotFoundError):
         return HTMLResponse(
             status_code=404,
@@ -162,35 +162,32 @@ async def handle_download(
             case DownloadMode.part:
                 story_id, metadata = await fetch_story_from_partId(download_id, cookies)
 
+        cover_data = await fetch_cover(metadata["cover"].replace("-256-", "-512-"))
+
+        match format:
+            case DownloadFormat.epub:
+                book = EPUBGenerator(metadata, cover_data)
+                media_type = "application/epub+zip"
+            case DownloadFormat.pdf:
+                book = PDFGenerator(metadata, cover_data)
+                media_type = "application/pdf"
+
         logger.info(f"Retrieved story id ({story_id=})")
 
-        cover_data = await fetch_cover(metadata["cover"].replace("-256-", "-512-"))
         part_contents = [
             f"<h1>{part['title']}</h1>"
             + (clean_part_text(await fetch_part_content(part["id"], cookies=cookies)))
             for part in metadata["parts"]
         ]
 
-        match format:
-            case DownloadFormat.epub:
-                book = EPUBGenerator(metadata, cover_data)
-            case DownloadFormat.pdf:
-                book = PDFGenerator(metadata, cover_data)
-
         async for title in book.add_chapters(
             part_contents, download_images=download_images
         ):
-            print(title)
+            ...
 
         book_file = book.dump().file
         book_bytes = book_file.read()
         book_file.close()
-
-        match format:
-            case DownloadFormat.epub:
-                media_type = "application/epub+zip"
-            case DownloadFormat.pdf:
-                media_type = "application/pdf"
 
         return StreamingResponse(
             BytesIO(book_bytes),

@@ -6,7 +6,6 @@ import json
 import logging
 import tempfile
 import unicodedata
-from io import BytesIO, StringIO
 from os import environ
 from enum import Enum
 from base64 import b64encode
@@ -16,7 +15,6 @@ from eliot import to_file, start_action
 from eliot.stdlib import EliotHandler
 from dotenv import load_dotenv
 from ebooklib import epub
-from ebooklib.epub import EpubBook
 from exiftool import ExifTool
 from bs4 import BeautifulSoup
 from pydantic import TypeAdapter, model_validator, field_validator
@@ -28,14 +26,19 @@ from aiohttp_client_cache import FileBackend, RedisBackend
 load_dotenv(override=True)
 
 handler = EliotHandler()
+
 logging.getLogger("fastapi").setLevel(logging.INFO)
 logging.getLogger("fastapi").addHandler(handler)
+
+exiftool_logger = logging.getLogger("exiftool")
+exiftool_logger.addHandler(handler)
+
+logger = logging.Logger("wpd")
+logger.addHandler(handler)
 
 if environ.get("DEBUG"):
     to_file(open("eliot.log", "wb"))
 
-logger = logging.Logger("wpd")
-logger.addHandler(handler)
 
 # --- #
 
@@ -104,6 +107,18 @@ else:
 logger.info(f"Using {cache=}")
 
 # --- Utilities --- #
+
+
+def clean_part_text(text: str):
+    """Remove unnecessary newlines from Text"""
+    soup = BeautifulSoup(text)
+
+    for br in soup.find_all("br"):
+        # Check if no content after br
+        if not br.next_sibling or br.next_sibling.name in ["br", None]:
+            br.decompose()
+
+    return str(soup)
 
 
 def slugify(value, allow_unicode=False) -> str:
@@ -319,7 +334,7 @@ class EPUBGenerator:
         self.data = data
         self.cover = cover
 
-        # set metadata
+        # set metadata, defined in https://www.dublincore.org/specifications/dublin-core/dcmi-terms/#section-2
         self.epub.add_author(data["user"]["username"])
 
         self.epub.add_metadata("DC", "title", data["title"])
@@ -358,7 +373,7 @@ class EPUBGenerator:
             # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
             chapter = epub.EpubHtml(
                 title=title,
-                file_name=f"{cidx}.xhtml",  # Used to be clean_title.xhtml, but that broke Arabic support as slugify turns arabic strings into '', leading to multiple files with the same name, breaking those chapters.
+                file_name=f"{cidx}.xhtml",  # See issue #30
                 lang=self.data["language"]["name"],
             )
 
@@ -387,10 +402,9 @@ class EPUBGenerator:
                             )
 
             chapter.set_content(content)
-
             chapters.append(chapter)
 
-            yield title  # Yield the chapter's title upon insertion preceeded by retrieval.
+            yield title
 
         for chapter in chapters:
             self.epub.add_item(chapter)
@@ -475,13 +489,16 @@ wp_copyright = {
 
 
 class PDFGenerator:
+    """PDF Generation utilities"""
+
     def __init__(self, data: Story, cover: bytes):
         self.data = data
         self.file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=True)
         self.cover = cover
-        # self.canvas = Canvas(self.file)
 
     async def add_chapters(self, contents: List[str], download_images: bool = False):
+        """Add chapters to the PDF"""
+
         chapters: List[tempfile._TemporaryFileWrapper] = []
 
         for part, content in zip(self.data["parts"], contents):
@@ -489,6 +506,7 @@ class PDFGenerator:
             image_sources: List[str] = []
 
             for image_container in html.find_all("p", {"data-media-type": "image"}):
+                # Find all images, download them if download_images, else clear them (else wkhtmltopdf _might_ fetch them)
                 img = image_container.findChild("img")
                 source = img.get("src")
                 if not download_images and source:
@@ -508,7 +526,7 @@ class PDFGenerator:
                             writable_html = writable_html.replace(
                                 image_url,
                                 f"data:image/jpg;base64,{b64encode(image).decode()}",
-                            )
+                            )  # Base64-encoded images are better than referencing NamedTemporaryFiles as it's less access to the local filesystem, the enable-local-file-access would be disabled if not for local fonts.
 
             tempie = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
             tempie.write(writable_html.encode())
@@ -541,7 +559,9 @@ class PDFGenerator:
             cover_first=True,
         )
 
-        clean_description = self.data["description"].strip().replace("\n", "$/")
+        clean_description = (
+            self.data["description"].strip().replace("\n", "$/")
+        )  # exiftool doesn't parse \ns correctly, they support $/ for the same instead. `&#xa;` is another option.
         metadata = {
             "Author": self.data["user"]["username"],
             "Title": self.data["title"],
@@ -556,6 +576,7 @@ class PDFGenerator:
         }  # As per https://exiftool.org/TagNames/PDF.html
 
         with ExifTool(config_file="../exiftool.config", logger=logger) as et:
+            # Custom configuration adds Completed and MatureContent tags.
             et.execute(
                 *(
                     [f"-{key}={value}" for key, value in metadata.items()]
@@ -573,15 +594,3 @@ class PDFGenerator:
         self.file.seek(0)
 
         return self
-
-
-def clean_part_text(text: str):
-    """Remove unnecessary newlines from Text"""
-    soup = BeautifulSoup(text)
-
-    for br in soup.find_all("br"):
-        # Check if no content after br
-        if not br.next_sibling or br.next_sibling.name in ["br", None]:
-            br.decompose()
-
-    return str(soup)
