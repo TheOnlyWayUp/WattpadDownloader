@@ -44,6 +44,8 @@ RUN pip3 install -r requirements.txt
 COPY --from=0 /build/build /app/src/build
 COPY src/api/src src
 
+RUN ln -s /app/src/pdf/fonts /tmp/fonts
+
 WORKDIR /app/src
 
 EXPOSE 80
