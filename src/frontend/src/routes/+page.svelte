@@ -1,5 +1,6 @@
 <script>
   let download_images = false;
+  let download_as_pdf = false; // 0 = epub, 1 = pdf
   let is_paid_story = false;
   let invalid_url = false;
   let after_download_page = false;
@@ -24,7 +25,8 @@
     (is_paid_story
       ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
       : "") +
-    `&mode=${mode}`;
+    `&mode=${mode}` +
+    (download_as_pdf ? "&format=pdf" : "&format=epub");
 
   $: {
     if (input_url.length) {
@@ -51,7 +53,10 @@
           mode = "story";
         } else {
           // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
-          input_url = input_url.split("-")[0].split("?")[0].split("wattpad.com/")[1]; // removes tracking fields and title
+          input_url = input_url
+            .split("-")[0]
+            .split("?")[0]
+            .split("wattpad.com/")[1]; // removes tracking fields and title
           download_id = input_url;
           if (/^\d+$/.test(download_id)) {
             // If "wattpad.com/{download_id}" contains only numbers
@@ -95,6 +100,7 @@
           </p>
           <ul class="pt-4 list list-inside text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
+            <li>12/24 - 📑 PDF Downloads!</li>
             <li>12/24 - 📂 Improved Performance</li>
             <li>11/24 - 🔗 Paste Links!</li>
             <li>11/24 - 📨 Send to Kindle Support!</li>
@@ -143,6 +149,7 @@
                   >
                 {/if}
               </label>
+
               <label class="cursor-pointer label">
                 <span class="label-text"
                   >This is a Paid Story, and I've purchased it</span
@@ -181,12 +188,24 @@
 
             <div class="form-control mt-6">
               <a
-                class="btn btn-primary rounded-l-none"
+                class="btn rounded-l-none"
+                class:btn-primary={!download_as_pdf}
+                class:btn-secondary={download_as_pdf}
                 class:btn-disabled={button_disabled}
                 data-umami-event="Download"
                 href={url}
                 on:click={() => (after_download_page = true)}>Download</a
               >
+
+              <label class="swap w-fit label mt-2">
+                <input type="checkbox" bind:checked={download_as_pdf} />
+                <div class="swap-on">
+                  Downloading as <span class=" underline text-bold">PDF</span> (Click)
+                </div>
+                <div class="swap-off">
+                  Downloading as <span class=" underline text-bold">EPUB</span> (Click)
+                </div>
+              </label>
 
               <label class="cursor-pointer label">
                 <span class="label-text"
