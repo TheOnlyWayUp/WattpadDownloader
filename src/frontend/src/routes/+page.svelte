@@ -252,13 +252,20 @@
               >, where we release features early and discuss updates.
             </p>
           </div>
-          <button
-            on:click={() => {
-              after_download_page = false;
-              input_url = "";
-            }}
-            class="btn btn-outline btn-lg mt-10">Download More</button
-          >
+          <div class="grid justify-center grid-rows-2 gap-y-10">
+            <a
+              href="/donate"
+              class="btn bg-cyan-200 btn-lg mt-10 hover:bg-green-200"
+              >Buy me a Coffee! 🍵</a
+            >
+            <button
+              on:click={() => {
+                after_download_page = false;
+                input_url = "";
+              }}
+              class="btn btn-outline btn-lg">Download More</button
+            >
+          </div>
         </div>
       {/if}
     </div>
