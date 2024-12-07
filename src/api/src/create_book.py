@@ -414,6 +414,66 @@ class EPUBGenerator:
         return temp_file
 
 
+wp_copyright = {
+    "1": {
+        "name": "All Rights Reserved",
+        "statement": "©️ 2024 by Your Name. All Rights Reserved.",
+        "freedoms": "No reuse, redistribution, or modification without permission.",
+        "printing": "Not allowed without explicit permission.",
+        "image_url": "",
+    },
+    "2": {
+        "name": "Public Domain",
+        "statement": "This work is in the public domain. Originally published in 1923.",
+        "freedoms": "Free to use for any purpose without permission.",
+        "printing": "Allowed for personal or commercial purposes.",
+        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/cc-zero.png",
+    },
+    "3": {
+        "name": "Creative Commons Attribution (CC-BY)",
+        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution 4.0 International License.",
+        "freedoms": "Allows reuse, redistribution, and modification with credit to the author.",
+        "printing": "Allowed with proper credit.",
+        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png",
+    },
+    "4": {
+        "name": "CC Attribution NonCommercial (CC-BY-NC)",
+        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.",
+        "freedoms": "Allows reuse and modification for non-commercial purposes with credit.",
+        "printing": "Allowed for non-commercial purposes with proper credit.",
+        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png",
+    },
+    "5": {
+        "name": "CC Attribution NonCommercial NoDerivs (CC-BY-NC-ND)",
+        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License.",
+        "freedoms": "Allows sharing in original form for non-commercial purposes with credit; no modifications allowed.",
+        "printing": "Allowed for non-commercial purposes in original form with proper credit.",
+        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-nd.png",
+    },
+    "6": {
+        "name": "CC Attribution NonCommercial ShareAlike (CC-BY-NC-SA)",
+        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.",
+        "freedoms": "Allows reuse and modification for non-commercial purposes under the same license, with credit.",
+        "printing": "Allowed for non-commercial purposes with proper credit under the same license.",
+        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-sa.png",
+    },
+    "7": {
+        "name": "CC Attribution ShareAlike (CC-BY-SA)",
+        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.",
+        "freedoms": "Allows reuse and modification for any purpose under the same license, with credit.",
+        "printing": "Allowed with proper credit under the same license.",
+        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png",
+    },
+    "8": {
+        "name": "CC Attribution NoDerivs (CC-BY-ND)",
+        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-NoDerivs 4.0 International License.",
+        "freedoms": "Allows sharing in original form for any purpose with credit; no modifications allowed.",
+        "printing": "Allowed in original form with proper credit.",
+        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nd.png",
+    },
+}
+
+
 class PDFGenerator:
     def __init__(self, data: Story, cover: bytes):
         self.data = data
@@ -426,8 +486,8 @@ class PDFGenerator:
 
         for part, content in zip(self.data["parts"], contents):
             html = BeautifulSoup(content, features="lxml")
-
             image_sources: List[str] = []
+
             for image_container in html.find_all("p", {"data-media-type": "image"}):
                 img = image_container.findChild("img")
                 source = img.get("src")
@@ -442,28 +502,21 @@ class PDFGenerator:
                             response.raise_for_status()
 
                             image = await response.read()
-                            # temp_img = tempfile.NamedTemporaryFile(
-                            #     suffix=".jpg", delete=False
-                            # )
-                            # temp_img.write(image)
 
                             writable_html = writable_html.replace(
                                 image_url,
                                 f"data:image/jpg;base64,{b64encode(image).decode()}",
                             )
-                            print("Replaced", image_url, "with bytes")
 
             tempie = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
             tempie.write(writable_html.encode())
-            # print(writable_html)
-
             chapters.append(tempie)
 
             yield part["title"]
 
         cover_file = tempfile.NamedTemporaryFile(suffix=".html")
         cover_file.write(
-            f'<html><body><img width="993" height="1404" src="data:image/jpg;base64,{b64encode(self.cover).decode()}"></img></body></html>'.encode()
+            f'<html><body><img width="993" height="1404" src="data:image/jpg;base64,{b64encode(self.cover).decode()}"></img></body></html>'.encode()  # A4 Size
         )
 
         pdfkit.from_file(
@@ -471,15 +524,7 @@ class PDFGenerator:
             self.file.name,
             cover=cover_file.file.name,
             toc={"toc-header-text": "Table of Contents"},
-            options={
-                "images" if download_images else "no-images": ""
-                # "margin-top": "-10mm",
-                # "margin-left": "-10mm",
-                # "margin-right": "0mm",
-                # "margin-bottom": "0mm",
-                # "dump-default-toc-xsl": "",
-                # "dump-outline": "",
-            },
+            options={"images" if download_images else "no-images": ""},
             cover_first=True,
         )
 
@@ -496,6 +541,7 @@ class PDFGenerator:
             "MatureContent": self.data["mature"],
             "Producer": "Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader",
         }  # As per https://exiftool.org/TagNames/PDF.html
+
         with ExifTool(config_file="../exiftool.config", logger=logger) as et:
             et.execute(
                 *(
