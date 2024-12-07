@@ -482,7 +482,7 @@ class PDFGenerator:
         # self.canvas = Canvas(self.file)
 
     async def add_chapters(self, contents: List[str], download_images: bool = False):
-        chapters = []
+        chapters: List[tempfile._TemporaryFileWrapper] = []
 
         for part, content in zip(self.data["parts"], contents):
             html = BeautifulSoup(content, features="lxml")
@@ -560,6 +560,9 @@ class PDFGenerator:
                     ]
                 )
             )
+
+        for chapter in chapters:
+            chapter.file.close()
 
     def dump(self) -> PDFGenerator:
         self.file.seek(0)

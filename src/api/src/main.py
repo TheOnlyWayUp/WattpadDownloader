@@ -182,7 +182,10 @@ async def handle_download(
         ):
             print(title)
 
-        book_bytes = book.dump().file.read()
+        book_file = book.dump().file
+        book_bytes = book_file.read()
+        book_file.close()
+
         match format:
             case DownloadFormat.epub:
                 media_type = "application/epub+zip"
