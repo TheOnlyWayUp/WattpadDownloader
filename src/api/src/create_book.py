@@ -9,6 +9,7 @@ import unicodedata
 from io import BytesIO, StringIO
 from os import environ
 from enum import Enum
+from base64 import b64encode
 import backoff
 import pdfkit
 from eliot import to_file, start_action
@@ -423,7 +424,7 @@ class PDFGenerator:
         chapters = []
 
         for part, content in zip(self.data["parts"], contents):
-            html = BeautifulSoup(content)
+            html = BeautifulSoup(content, features="lxml")
 
             image_sources: List[str] = []
             for image_container in html.find_all("p", {"data-media-type": "image"}):
@@ -440,19 +441,20 @@ class PDFGenerator:
                             response.raise_for_status()
 
                             image = await response.read()
-                            temp_img = tempfile.NamedTemporaryFile(
-                                suffix=".jpg", delete=False
-                            )
-                            temp_img.write(image)
+                            # temp_img = tempfile.NamedTemporaryFile(
+                            #     suffix=".jpg", delete=False
+                            # )
+                            # temp_img.write(image)
 
                             writable_html = writable_html.replace(
-                                image_url, f"file://{temp_img.file.name}"
+                                image_url,
+                                f"data:image/jpg;base64,{b64encode(image).decode()}",
                             )
-                            print("Replaced", image_url, "with", temp_img.file.name)
+                            print("Replaced", image_url, "with bytes")
 
             tempie = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
             tempie.write(writable_html.encode())
-            print(writable_html)
+            # print(writable_html)
 
             chapters.append(tempie)
 
@@ -461,11 +463,6 @@ class PDFGenerator:
         pdfkit.from_file(
             [chapter.file.name for chapter in chapters],
             self.file.name,
-            options={
-                "enable-local-file-access": None,
-                "images": download_images,
-                "title": self.data["title"],
-            },
         )
 
         clean_description = self.data["description"].strip().replace("\n", "$/")
