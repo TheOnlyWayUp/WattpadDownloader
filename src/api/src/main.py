@@ -164,7 +164,7 @@ async def handle_download(
 
         logger.info(f"Retrieved story id ({story_id=})")
 
-        cover_data = await fetch_cover(metadata["cover"])
+        cover_data = await fetch_cover(metadata["cover"].replace("-256-", "-512-"))
         part_contents = [
             f"<h1>{part['title']}</h1>"
             + (await fetch_part_content(part["id"], cookies=cookies))

@@ -418,6 +418,7 @@ class PDFGenerator:
     def __init__(self, data: Story, cover: bytes):
         self.data = data
         self.file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=True)
+        self.cover = cover
         # self.canvas = Canvas(self.file)
 
     async def add_chapters(self, contents: List[str], download_images: bool = False):
@@ -460,9 +461,26 @@ class PDFGenerator:
 
             yield part["title"]
 
+        cover_file = tempfile.NamedTemporaryFile(suffix=".html")
+        cover_file.write(
+            f'<html><body><img width="993" height="1404" src="data:image/jpg;base64,{b64encode(self.cover).decode()}"></img></body></html>'.encode()
+        )
+
         pdfkit.from_file(
             [chapter.file.name for chapter in chapters],
             self.file.name,
+            cover=cover_file.file.name,
+            toc={"toc-header-text": "Table of Contents"},
+            options={
+                "images" if download_images else "no-images": ""
+                # "margin-top": "-10mm",
+                # "margin-left": "-10mm",
+                # "margin-right": "0mm",
+                # "margin-bottom": "0mm",
+                # "dump-default-toc-xsl": "",
+                # "dump-outline": "",
+            },
+            cover_first=True,
         )
 
         clean_description = self.data["description"].strip().replace("\n", "$/")
