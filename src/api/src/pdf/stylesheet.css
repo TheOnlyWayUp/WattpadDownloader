@@ -1,0 +1,71 @@
+@font-face {
+  font-family: 'PT Serif';
+  src: url('/tmp/fonts/PTSerif-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'PT Serif';
+  src: url('/tmp/fonts/PTSerif-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'PT Serif';
+  src: url('/tmp/fonts/PTSerif-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'PT Serif';
+  src: url('/tmp/fonts/PTSerif-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+}
+
+.pt-serif-regular {
+  font-family: "PT Serif", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.pt-serif-bold {
+  font-family: "PT Serif", serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.pt-serif-regular-italic {
+  font-family: "PT Serif", serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.pt-serif-bold-italic {
+  font-family: "PT Serif", serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+
+
+h1 {
+  text-align: center;
+  font-family: "PT Serif", serif !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+  font-size: 36px !important; /* Uniform size */
+  margin-bottom: 20px; /* Space below the heading */
+  border-bottom: 2px solid rgb(100, 100, 100); /* Black line */
+  padding-bottom: 10px; /* Space between text and line */
+}
+
+p {
+  font-size: 16px !important; /* Standardize paragraph size */
+  line-height: 1.6 !important; /* Improve readability */
+  margin: 10px 0 !important; /* Space between paragraphs */
+}
+

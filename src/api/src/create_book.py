@@ -525,13 +525,18 @@ class PDFGenerator:
             [chapter.file.name for chapter in chapters],
             self.file.name,
             cover=cover_file.file.name,
-            toc={"toc-header-text": "Table of Contents"},
+            toc={
+                "toc-header-text": "Table of Contents",
+                "xsl-style-sheet": "./pdf/toc.xsl",
+            },
             options={
-                "footer-html": "footer.html",
+                "footer-html": "./pdf/footer.html",
                 "margin-top": "10mm",
                 "margin-bottom": "10mm",
                 "title": self.data["title"],
                 "encoding": "UTF-8",
+                "user-style-sheet": "./pdf/stylesheet.css",
+                "enable-local-file-access": "",
             },
             cover_first=True,
         )
