@@ -565,3 +565,15 @@ class PDFGenerator:
         self.file.seek(0)
 
         return self
+
+
+def clean_part_text(text: str):
+    """Remove unnecessary newlines from Text"""
+    soup = BeautifulSoup(text)
+
+    for br in soup.find_all("br"):
+        # Check if no content after br
+        if not br.next_sibling or br.next_sibling.name in ["br", None]:
+            br.decompose()
+
+    return str(soup)

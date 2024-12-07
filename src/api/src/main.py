@@ -10,7 +10,6 @@ from aiohttp import ClientResponseError
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from ebooklib import epub
 from create_book import (
     EPUBGenerator,
     PDFGenerator,
@@ -21,6 +20,7 @@ from create_book import (
     fetch_cookies,
     WattpadError,
     StoryNotFoundError,
+    clean_part_text,
     slugify,
     logger,
 )
@@ -167,7 +167,7 @@ async def handle_download(
         cover_data = await fetch_cover(metadata["cover"].replace("-256-", "-512-"))
         part_contents = [
             f"<h1>{part['title']}</h1>"
-            + (await fetch_part_content(part["id"], cookies=cookies))
+            + (clean_part_text(await fetch_part_content(part["id"], cookies=cookies)))
             for part in metadata["parts"]
         ]
 
