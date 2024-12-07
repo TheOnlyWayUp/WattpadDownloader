@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from typing_extensions import TypedDict
 import re
 import json
@@ -109,6 +109,21 @@ logger.info(f"Using {cache=}")
 # --- Utilities --- #
 
 
+def smart_trim(text: str):
+    max_len = 400
+    chunks = [t for t in text.split("\n") if t]
+
+    to_return = ""
+    for chunk in chunks:
+        if len(to_return) + len(chunk) < max_len:
+            to_return = chunk + "<br />"
+        else:
+            to_return = to_return.rstrip("<br />")
+            break
+
+    return to_return
+
+
 def clean_part_text(text: str):
     """Remove unnecessary newlines from Text"""
     soup = BeautifulSoup(text)
@@ -185,12 +200,22 @@ async def fetch_cookies(username: str, password: str) -> dict:
 # --- Models --- #
 
 
+class CopyrightData(TypedDict):
+    name: str
+    statement: str
+    freedoms: str
+    printing: str
+    image_url: Optional[str]
+
+
 class Language(TypedDict):
     name: str
 
 
 class User(TypedDict):
     username: str
+    avatar: str
+    description: str
 
 
 class Part(TypedDict):
@@ -213,6 +238,7 @@ class Story(TypedDict):
     url: str
     parts: List[Part]
     isPaywalled: bool
+    copyright: int
 
 
 story_ta = TypeAdapter(Story)
@@ -246,7 +272,7 @@ async def fetch_story_from_partId(
             headers=headers, cache=None if cookies else cache
         ) as session:  # Don't cache requests with Cookies.
             async with session.get(
-                f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId,group(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover)"
+                f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId,group(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username,avatar,description),parts(id,title),cover,copyright)"
             ) as response:
                 body = await response.json()
 
@@ -269,7 +295,7 @@ async def fetch_story(story_id: int, cookies: Optional[dict] = None) -> Story:
             headers=headers, cookies=cookies, cache=None if cookies else cache
         ) as session:
             async with session.get(
-                f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username),parts(id,title),cover"
+                f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username,avatar,description),parts(id,title),cover,copyright"
             ) as response:
                 body = await response.json()
 
@@ -428,64 +454,87 @@ class EPUBGenerator:
         return temp_file
 
 
-wp_copyright = {
+wp_copyright: Dict[str, CopyrightData] = {
     "1": {
         "name": "All Rights Reserved",
-        "statement": "©️ 2024 by Your Name. All Rights Reserved.",
+        "statement": "©️ {published_year} by {username}. All Rights Reserved.",
         "freedoms": "No reuse, redistribution, or modification without permission.",
         "printing": "Not allowed without explicit permission.",
-        "image_url": "",
+        "image_url": None,
     },
     "2": {
         "name": "Public Domain",
-        "statement": "This work is in the public domain. Originally published in 1923.",
+        "statement": "This work is in the public domain. Originally published in {published_year}.",
         "freedoms": "Free to use for any purpose without permission.",
         "printing": "Allowed for personal or commercial purposes.",
         "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/cc-zero.png",
     },
     "3": {
         "name": "Creative Commons Attribution (CC-BY)",
-        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution 4.0 International License.",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution 4.0 International License.",
         "freedoms": "Allows reuse, redistribution, and modification with credit to the author.",
         "printing": "Allowed with proper credit.",
         "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png",
     },
     "4": {
         "name": "CC Attribution NonCommercial (CC-BY-NC)",
-        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.",
         "freedoms": "Allows reuse and modification for non-commercial purposes with credit.",
         "printing": "Allowed for non-commercial purposes with proper credit.",
         "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png",
     },
     "5": {
         "name": "CC Attribution NonCommercial NoDerivs (CC-BY-NC-ND)",
-        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License.",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License.",
         "freedoms": "Allows sharing in original form for non-commercial purposes with credit; no modifications allowed.",
         "printing": "Allowed for non-commercial purposes in original form with proper credit.",
         "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-nd.png",
     },
     "6": {
         "name": "CC Attribution NonCommercial ShareAlike (CC-BY-NC-SA)",
-        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.",
         "freedoms": "Allows reuse and modification for non-commercial purposes under the same license, with credit.",
         "printing": "Allowed for non-commercial purposes with proper credit under the same license.",
         "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-sa.png",
     },
     "7": {
         "name": "CC Attribution ShareAlike (CC-BY-SA)",
-        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.",
         "freedoms": "Allows reuse and modification for any purpose under the same license, with credit.",
         "printing": "Allowed with proper credit under the same license.",
         "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png",
     },
     "8": {
         "name": "CC Attribution NoDerivs (CC-BY-ND)",
-        "statement": "©️ 2024 by Your Name. This work is licensed under a Creative Commons Attribution-NoDerivs 4.0 International License.",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NoDerivs 4.0 International License.",
         "freedoms": "Allows sharing in original form for any purpose with credit; no modifications allowed.",
         "printing": "Allowed in original form with proper credit.",
         "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nd.png",
     },
 }
+
+
+author_template = """
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>About the Author</title>
+    </head>
+    <body id="author-body">
+    <h1>About the Author</h1>
+        <div id="author-container">
+            <div id="author-about">
+                {avatar}
+                <h2 id="author-name"><a href="https://wattpad.com/user/{username}" id="author-link">{username}</a></h2>
+                <hr id="author-divider">
+                <p id="author-bio">
+                    {description}
+                </p>
+            </div>
+        </div>
+    </body>
+</html>
+"""
 
 
 class PDFGenerator:
@@ -532,12 +581,62 @@ class PDFGenerator:
             tempie.write(writable_html.encode())
             chapters.append(tempie)
 
+            tempie.file.seek(0)
+
             yield part["title"]
 
         cover_file = tempfile.NamedTemporaryFile(suffix=".html")
         cover_file.write(
             f'<html><body><img width="993" height="1404" src="data:image/jpg;base64,{b64encode(self.cover).decode()}"></img></body></html>'.encode()  # A4 Size
         )
+
+        # copyright_data = wp_copyright[str(self.data["copyright"])]
+        # copyright_image = (
+        #     await fetch_cover(copyright_data["image_url"])
+        #     if copyright_data["image_url"]
+        #     else None
+        # )
+        # about_copyright = copyright_template.format(
+        #     statement=copyright_data["statement"].format(
+        #         username=self.data["user"]["username"],
+        #         published_year=self.data["createDate"],
+        #     ),
+        #     freedoms=copyright_data["freedoms"],
+        #     printing=copyright_data["printing"],
+        # )
+        # about_copyright = (
+        #     about_copyright.replace(
+        #         "{avatar}",
+        #         f"data:image/jpg;base64,{b64encode(copyright_image).decode()}",
+        #     )
+        #     if copyright_image
+        #     else about_copyright.replace("{avatar}", "")
+        # )
+
+        author_avatar = (
+            await fetch_cover(
+                self.data["user"]["avatar"].replace("128", "512")
+            )  # Increase image resolution
+            if self.data["user"]["avatar"]
+            else None
+        )
+        about_author = author_template.replace(
+            "{username}", self.data["user"]["username"]
+        ).replace("{description}", smart_trim(self.data["user"]["description"]))
+
+        about_author = (
+            about_author.replace(
+                "{avatar}",
+                f"""
+                <img src="data:image/jpg;base64,{b64encode(author_avatar).decode()}" alt="Author's profile picture" id="author-profile-picture">""",
+            )
+            if author_avatar
+            else about_author.replace("{avatar}", "")
+        )
+        about_author_file = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
+        about_author_file.write(about_author.encode())
+        chapters.append(about_author_file)
+        about_author_file.seek(0)
 
         pdfkit.from_file(
             [chapter.file.name for chapter in chapters],
@@ -557,6 +656,7 @@ class PDFGenerator:
                 "enable-local-file-access": "",
             },
             cover_first=True,
+            verbose=True,
         )
 
         clean_description = (
