@@ -16,17 +16,17 @@
   class="footer footer-center p-4 bg-base-300 text-base-content bottom-0 fixed"
 >
   <aside>
-    <div class="grid grid-cols-3 max-w-lg w-full">
+    <div class="flex flex-row max-w-lg w-full">
       <a
-        href="https://patreon.com/theonlywayup"
+        href="/donate"
         target="_blank"
         class="link"
-        data-umami-event="Footer Donate">Patreon</a
+        data-umami-event="Footer Donate">Buy me a Coffee!</a
       >
       <a
         href="https://rambhat.la"
         target="_blank"
-        class="link"
+        class="link flex-1"
         data-umami-event="Footer AboutMe">About Me</a
       >
       <a
