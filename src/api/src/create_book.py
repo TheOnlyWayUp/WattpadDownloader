@@ -491,6 +491,8 @@ class PDFGenerator:
             for image_container in html.find_all("p", {"data-media-type": "image"}):
                 img = image_container.findChild("img")
                 source = img.get("src")
+                if not download_images and source:
+                    img["src"] = ""
                 image_container.replace_with(img)
                 image_sources.append(source)
 
@@ -524,7 +526,13 @@ class PDFGenerator:
             self.file.name,
             cover=cover_file.file.name,
             toc={"toc-header-text": "Table of Contents"},
-            options={"images" if download_images else "no-images": ""},
+            options={
+                "footer-html": "footer.html",
+                "margin-top": "10mm",
+                "margin-bottom": "10mm",
+                "title": self.data["title"],
+                "encoding": "UTF-8",
+            },
             cover_first=True,
         )
 
