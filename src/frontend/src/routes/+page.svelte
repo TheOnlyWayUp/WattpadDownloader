@@ -86,7 +86,7 @@
 <div>
   <div class="hero min-h-screen">
     <div
-      class="hero-content flex-col lg:flex-row-reverse bg-base-100/50 p-16 rounded shadow-sm"
+      class="hero-content flex-col lg:flex-row-reverse bg-base-100/50 lg:p-16 py-32 rounded shadow-sm"
     >
       {#if !after_download_page}
         <div class="text-center lg:text-left lg:p-10">
