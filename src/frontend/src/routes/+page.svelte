@@ -210,7 +210,6 @@
                 class:btn-disabled={button_disabled}
                 data-umami-event="Download"
                 href={url}
-                download
                 on:click={() => (after_download_page = true)}>Download</a
               >
 
