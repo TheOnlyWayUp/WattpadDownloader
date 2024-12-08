@@ -41,9 +41,14 @@ WORKDIR /app
 
 # --- #
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 COPY src/api/requirements.txt requirements.txt
+# COPY src/api/pyproject.toml pyproject.toml
+# COPY src/api/uv.lock uv.lock
+
 COPY src/api/exiftool.config exiftool.config
-RUN pip3 install -r requirements.txt
+RUN uv pip install -r requirements.txt --system
 COPY --from=0 /build/build /app/src/build
 COPY src/api/src src
 
