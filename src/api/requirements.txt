@@ -34,10 +34,12 @@ mdurl==0.1.2
 motor==3.6.0
 multidict==6.0.4
 orjson==3.10.12
+pdfkit==1.0.0
 propcache==0.2.1
 pydantic==2.10.2
 pydantic-core==2.27.1
 pydantic-settings==2.6.1
+pyexiftool==0.5.6
 pygments==2.18.0
 pymongo==4.9.2
 pyrsistent==0.20.0
