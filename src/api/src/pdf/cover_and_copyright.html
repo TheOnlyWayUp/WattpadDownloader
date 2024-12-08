@@ -5,64 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Copyright Page</title>
     <style>
+
+
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
             background-color: #f8f8f8;
         }
-
+        
         body {
-            /* Modern flexbox centering */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            
-            /* Fallback for older browsers */
-            display: -webkit-box;
-            display: -webkit-flex;
-            display: -ms-flexbox;
-            
-            -webkit-box-align: center;
-            -webkit-align-items: center;
-            -ms-flex-align: center;
-            
-            -webkit-box-pack: center;
-            -webkit-justify-content: center;
-            -ms-flex-pack: center;
+            text-align: center; /* For inline-block fallback centering */
+            line-height: 1.5;
         }
-
-        /* Table-cell fallback for even older browsers */
-        body:before {
-            content: '';
-            display: inline-block;
-            height: 100%;
-            vertical-align: middle;
-            margin-right: -0.25em;
-        }
-
+        
         #copyright-container {
-            /* Basic styles */
-            width: 100%;
-            max-width: 600px;
+            position: relative;
+            margin: 20px auto;
+            width: 100%; /* Make it span the entire page */
+            max-width: 100%; /* Ensures no unintended shrinking */
+        
+            /* Styling */
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 2rem;
             text-align: center;
-            
-            /* Fallback positioning */
-            display: inline-block;
-            vertical-align: middle;
-            
-            /* Ensure proper margin on all browsers */
-            margin: 20px;
-            
-            /* Prevent overflow issues */
+        
+            /* Old WebKit Box Model Compatibility */
             box-sizing: border-box;
             -webkit-box-sizing: border-box;
             -moz-box-sizing: border-box;
+        
+            /* Center the text content */
+            text-align: center;
         }
+        
 
         #copyright-notice {
             font-size: 2rem;
@@ -151,6 +129,10 @@
     </style>
 </head>
 <body>
+    <div style="text-align: center; margin-top: 20px;">
+        <img width="993" height="1404" src="{cover}" alt="Book Cover" />
+    </div>
+
     <div id="copyright-container">
         <h1 id="copyright-notice">Copyright Notice</h1>
         <h2 id="copyright-title">{book_title}</h2>

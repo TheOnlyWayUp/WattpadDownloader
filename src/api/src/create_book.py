@@ -514,27 +514,10 @@ wp_copyright: Dict[str, CopyrightData] = {
 }
 
 
-author_template = """
-<html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>About the Author</title>
-    </head>
-    <body id="author-body">
-    <h1>About the Author</h1>
-        <div id="author-container">
-            <div id="author-about">
-                {avatar}
-                <h2 id="author-name"><a href="https://wattpad.com/user/{username}" id="author-link">{username}</a></h2>
-                <hr id="author-divider">
-                <p id="author-bio">
-                    {description}
-                </p>
-            </div>
-        </div>
-    </body>
-</html>
-"""
+with open("./pdf/cover_and_copyright.html") as reader:
+    copyright_template = reader.read()
+with open("./pdf/author.html") as reader:
+    author_template = reader.read()
 
 
 class PDFGenerator:
@@ -585,14 +568,7 @@ class PDFGenerator:
 
             yield part["title"]
 
-        cover_file = tempfile.NamedTemporaryFile(suffix=".html")
-        cover_file.write(
-            f'<html><body><img width="993" height="1404" src="data:image/jpg;base64,{b64encode(self.cover).decode()}"></img></body></html>'.encode()  # A4 Size
-        )
-
-        with open("./pdf/copyright.html") as reader:
-            copyright_template = reader.read()
-
+        # Cover and Copyright Page
         copyright_data = wp_copyright[str(self.data["copyright"])]
         copyright_image = (
             await fetch_cover(copyright_data["image_url"])
@@ -636,10 +612,15 @@ style="margin-bottom: 1rem;">""".format(
             if image_block
             else about_copyright.replace("{copyright_image}", "")
         )
-        about_copyright_file = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
-        about_copyright_file.write(about_copyright.encode())
-        chapters.insert(0, about_copyright_file)
-        about_copyright_file.seek(0)
+        about_copyright = about_copyright.replace(
+            "{cover}", f"data:image/jpg;base64,{b64encode(self.cover).decode()}"
+        )
+
+        cover_and_copyright_file = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=True
+        )
+        cover_and_copyright_file.write(about_copyright.encode())
+        cover_and_copyright_file.seek(0)
 
         author_avatar = (
             await fetch_cover(
@@ -669,7 +650,7 @@ style="margin-bottom: 1rem;">""".format(
         pdfkit.from_file(
             [chapter.file.name for chapter in chapters],
             self.file.name,
-            cover=cover_file.file.name,
+            cover=cover_and_copyright_file.file.name,
             toc={
                 "toc-header-text": "Table of Contents",
                 "xsl-style-sheet": "./pdf/toc.xsl",
