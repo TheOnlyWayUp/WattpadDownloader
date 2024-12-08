@@ -167,7 +167,9 @@ async def handle_download(
             case DownloadMode.part:
                 story_id, metadata = await fetch_story_from_partId(download_id, cookies)
 
-        cover_data = await fetch_cover(metadata["cover"].replace("-256-", "-512-"))
+        cover_data = await fetch_cover(
+            metadata["cover"].replace("-256-", "-512-")
+        )  # Increase resolution
 
         match format:
             case DownloadFormat.epub:
@@ -177,7 +179,7 @@ async def handle_download(
                 book = PDFGenerator(metadata, cover_data)
                 media_type = "application/pdf"
 
-        logger.info(f"Retrieved story id ({story_id=})")
+        logger.info(f"Retrieved story metadata and cover ({story_id=})")
 
         part_contents = [
             f"<h1>{part['title']}</h1>"
@@ -192,7 +194,7 @@ async def handle_download(
 
         book_file = book.dump().file
         book_bytes = book_file.read()
-        book_file.close()
+        book_file.close()  # Deletes tempfile
 
         return StreamingResponse(
             BytesIO(book_bytes),
@@ -205,6 +207,7 @@ async def handle_download(
 
 @app.get("/donate")
 def donate():
+    """Redirect to donation URL."""
     return RedirectResponse("https://buymeacoffee.com/theonlywayup")
 
 

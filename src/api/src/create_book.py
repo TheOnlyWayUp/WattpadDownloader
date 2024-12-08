@@ -109,13 +109,13 @@ logger.info(f"Using {cache=}")
 # --- Utilities --- #
 
 
-def smart_trim(text: str):
-    max_len = 400
+def smart_trim(text: str, max_length: int = 400) -> str:
+    """Truncate a string intelligently at newlines. Coherence and max-length adherence."""
     chunks = [t for t in text.split("\n") if t]
 
     to_return = ""
     for chunk in chunks:
-        if len(to_return) + len(chunk) < max_len:
+        if len(to_return) + len(chunk) < max_length:
             to_return = chunk + "<br />"
         else:
             to_return = to_return.rstrip("<br />")
@@ -124,7 +124,7 @@ def smart_trim(text: str):
     return to_return
 
 
-def clean_part_text(text: str):
+def clean_part_text(text: str) -> str:
     """Remove unnecessary newlines from Text"""
     soup = BeautifulSoup(text)
 
@@ -243,6 +243,73 @@ class Story(TypedDict):
 
 story_ta = TypeAdapter(Story)
 
+# --- PDF Dependencies --- #
+
+wp_copyright: Dict[int, CopyrightData] = {
+    1: {
+        "name": "All Rights Reserved",
+        "statement": "©️ {published_year} by {username}. All Rights Reserved.",
+        "freedoms": "No reuse, redistribution, or modification without permission.",
+        "printing": "Not allowed without explicit permission.",
+        "image_url": None,
+    },
+    2: {
+        "name": "Public Domain",
+        "statement": "This work is in the public domain. Originally published in {published_year} by {username}.",
+        "freedoms": "Free to use for any purpose without permission.",
+        "printing": "Allowed for personal or commercial purposes.",
+        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/cc-zero.png",
+    },
+    3: {
+        "name": "Creative Commons Attribution (CC-BY)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution 4.0 International License.",
+        "freedoms": "Allows reuse, redistribution, and modification with credit to the author.",
+        "printing": "Allowed with proper credit.",
+        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png",
+    },
+    4: {
+        "name": "CC Attribution NonCommercial (CC-BY-NC)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.",
+        "freedoms": "Allows reuse and modification for non-commercial purposes with credit.",
+        "printing": "Allowed for non-commercial purposes with proper credit.",
+        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png",
+    },
+    5: {
+        "name": "CC Attribution NonCommercial NoDerivs (CC-BY-NC-ND)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License.",
+        "freedoms": "Allows sharing in original form for non-commercial purposes with credit; no modifications allowed.",
+        "printing": "Allowed for non-commercial purposes in original form with proper credit.",
+        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-nd.png",
+    },
+    6: {
+        "name": "CC Attribution NonCommercial ShareAlike (CC-BY-NC-SA)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.",
+        "freedoms": "Allows reuse and modification for non-commercial purposes under the same license, with credit.",
+        "printing": "Allowed for non-commercial purposes with proper credit under the same license.",
+        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-sa.png",
+    },
+    7: {
+        "name": "CC Attribution ShareAlike (CC-BY-SA)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.",
+        "freedoms": "Allows reuse and modification for any purpose under the same license, with credit.",
+        "printing": "Allowed with proper credit under the same license.",
+        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png",
+    },
+    8: {
+        "name": "CC Attribution NoDerivs (CC-BY-ND)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NoDerivs 4.0 International License.",
+        "freedoms": "Allows sharing in original form for any purpose with credit; no modifications allowed.",
+        "printing": "Allowed in original form with proper credit.",
+        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nd.png",
+    },
+}
+
+
+with open("./pdf/cover_and_copyright.html") as reader:
+    copyright_template = reader.read()
+with open("./pdf/author.html") as reader:
+    author_template = reader.read()
+
 # --- Exceptions --- #
 
 
@@ -351,11 +418,14 @@ async def fetch_cover(url: str) -> bytes:
         return body
 
 
-# --- EPUB Generation --- #
+# --- Generation --- #
 
 
 class EPUBGenerator:
+    """EPUB Generation utilities"""
+
     def __init__(self, data: Story, cover: bytes):
+        """Initialize EPUBGenerator. Create epub.EpubBook() and set metadata and cover."""
         self.epub = epub.EpubBook()
         self.data = data
         self.cover = cover
@@ -382,7 +452,7 @@ class EPUBGenerator:
             {"name": "completed", "content": str(int(data["completed"]))},
         )
 
-        # Set book cover
+        # Set cover
         self.epub.set_cover("cover.jpg", cover)
         cover_chapter = epub.EpubHtml(
             file_name="titlepage.xhtml",  # Standard for cover page
@@ -391,7 +461,8 @@ class EPUBGenerator:
         self.epub.add_item(cover_chapter)
 
     async def add_chapters(self, contents: List[str], download_images: bool = False):
-        chapters = []
+        """Add chapters to the Epub, downloading images if necessary. Sets the table of contents and spine."""
+        chapters: List[epub.EpubHtml] = []
 
         for cidx, (part, content) in enumerate(zip(self.data["parts"], contents)):
             title = part["title"]
@@ -399,8 +470,9 @@ class EPUBGenerator:
             # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
             chapter = epub.EpubHtml(
                 title=title,
-                file_name=f"{cidx}.xhtml",  # See issue #30
+                file_name=f"{cidx}_{part['id']}.xhtml",  # See issue #30
                 lang=self.data["language"]["name"],
+                uid=part["id"],
             )
 
             if download_images:
@@ -428,12 +500,11 @@ class EPUBGenerator:
                             )
 
             chapter.set_content(content)
+            self.epub.add_item(chapter)
+
             chapters.append(chapter)
 
             yield title
-
-        for chapter in chapters:
-            self.epub.add_item(chapter)
 
         self.epub.toc = chapters
 
@@ -454,82 +525,17 @@ class EPUBGenerator:
         return temp_file
 
 
-wp_copyright: Dict[str, CopyrightData] = {
-    "1": {
-        "name": "All Rights Reserved",
-        "statement": "©️ {published_year} by {username}. All Rights Reserved.",
-        "freedoms": "No reuse, redistribution, or modification without permission.",
-        "printing": "Not allowed without explicit permission.",
-        "image_url": None,
-    },
-    "2": {
-        "name": "Public Domain",
-        "statement": "This work is in the public domain. Originally published in {published_year} by {username}.",
-        "freedoms": "Free to use for any purpose without permission.",
-        "printing": "Allowed for personal or commercial purposes.",
-        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/cc-zero.png",
-    },
-    "3": {
-        "name": "Creative Commons Attribution (CC-BY)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution 4.0 International License.",
-        "freedoms": "Allows reuse, redistribution, and modification with credit to the author.",
-        "printing": "Allowed with proper credit.",
-        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png",
-    },
-    "4": {
-        "name": "CC Attribution NonCommercial (CC-BY-NC)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.",
-        "freedoms": "Allows reuse and modification for non-commercial purposes with credit.",
-        "printing": "Allowed for non-commercial purposes with proper credit.",
-        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png",
-    },
-    "5": {
-        "name": "CC Attribution NonCommercial NoDerivs (CC-BY-NC-ND)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License.",
-        "freedoms": "Allows sharing in original form for non-commercial purposes with credit; no modifications allowed.",
-        "printing": "Allowed for non-commercial purposes in original form with proper credit.",
-        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-nd.png",
-    },
-    "6": {
-        "name": "CC Attribution NonCommercial ShareAlike (CC-BY-NC-SA)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.",
-        "freedoms": "Allows reuse and modification for non-commercial purposes under the same license, with credit.",
-        "printing": "Allowed for non-commercial purposes with proper credit under the same license.",
-        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-sa.png",
-    },
-    "7": {
-        "name": "CC Attribution ShareAlike (CC-BY-SA)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.",
-        "freedoms": "Allows reuse and modification for any purpose under the same license, with credit.",
-        "printing": "Allowed with proper credit under the same license.",
-        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png",
-    },
-    "8": {
-        "name": "CC Attribution NoDerivs (CC-BY-ND)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NoDerivs 4.0 International License.",
-        "freedoms": "Allows sharing in original form for any purpose with credit; no modifications allowed.",
-        "printing": "Allowed in original form with proper credit.",
-        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nd.png",
-    },
-}
-
-
-with open("./pdf/cover_and_copyright.html") as reader:
-    copyright_template = reader.read()
-with open("./pdf/author.html") as reader:
-    author_template = reader.read()
-
-
 class PDFGenerator:
     """PDF Generation utilities"""
 
     def __init__(self, data: Story, cover: bytes):
+        """Initialize PDGenerator, create PDF Temporary file."""
         self.data = data
         self.file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=True)
         self.cover = cover
 
     async def add_chapters(self, contents: List[str], download_images: bool = False):
-        """Add chapters to the PDF"""
+        """Add chapters to the PDF, downloading images if necessary. Also add Cover, Copyright, and About the Author pages."""
 
         chapters: List[tempfile._TemporaryFileWrapper] = []
 
@@ -560,21 +566,18 @@ class PDFGenerator:
                                 f"data:image/jpg;base64,{b64encode(image).decode()}",
                             )  # Base64-encoded images are better than referencing NamedTemporaryFiles as it's less access to the local filesystem, the enable-local-file-access would be disabled if not for local fonts.
 
-            tempie = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
+            tempie = tempfile.NamedTemporaryFile(
+                suffix=".html", delete=True
+            )  # tempie 🫡
             tempie.write(writable_html.encode())
-            chapters.append(tempie)
-
             tempie.file.seek(0)
+
+            chapters.append(tempie)
 
             yield part["title"]
 
         # Cover and Copyright Page
-        copyright_data = wp_copyright[str(self.data["copyright"])]
-        copyright_image = (
-            await fetch_cover(copyright_data["image_url"])
-            if copyright_data["image_url"]
-            else None
-        )
+        copyright_data = wp_copyright[self.data["copyright"]]
         about_copyright = (
             copyright_template.replace(
                 "{statement}",
@@ -592,6 +595,11 @@ class PDFGenerator:
             .replace("{book_title}", self.data["title"])
         )
 
+        copyright_image = (
+            await fetch_cover(copyright_data["image_url"])
+            if copyright_data["image_url"]
+            else None
+        )
         image_block = (
             """<img src="{image_url}" 
 alt="{name}" 
@@ -622,6 +630,7 @@ style="margin-bottom: 1rem;">""".format(
         cover_and_copyright_file.write(about_copyright.encode())
         cover_and_copyright_file.seek(0)
 
+        # About the Author page
         author_avatar = (
             await fetch_cover(
                 self.data["user"]["avatar"].replace("128", "512")
@@ -647,6 +656,7 @@ style="margin-bottom: 1rem;">""".format(
         chapters.append(about_author_file)
         about_author_file.seek(0)
 
+        # PDF Generation with wkhtmltopdf, written to self.file
         pdfkit.from_file(
             [chapter.file.name for chapter in chapters],
             self.file.name,
@@ -665,9 +675,9 @@ style="margin-bottom: 1rem;">""".format(
                 "enable-local-file-access": "",
             },
             cover_first=True,
-            verbose=True,
         )
 
+        # Metadata generation with Exiftool
         clean_description = (
             self.data["description"].strip().replace("\n", "$/")
         )  # exiftool doesn't parse \ns correctly, they support $/ for the same instead. `&#xa;` is another option.
@@ -696,6 +706,7 @@ style="margin-bottom: 1rem;">""".format(
                 )
             )
 
+        # Close files and delete them from tmp
         for chapter in chapters:
             chapter.file.close()
 
@@ -703,3 +714,6 @@ style="margin-bottom: 1rem;">""".format(
         self.file.seek(0)
 
         return self
+
+
+# ------ #
