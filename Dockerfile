@@ -21,7 +21,7 @@ RUN apt install -y git
 ENV WKHTML2PDF_VERSION='0.12.6-1'
 RUN apt install -y build-essential xorg libssl-dev libxrender-dev wget
 RUN wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTML2PDF_VERSION}/wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb"
-RUN sudo apt install -y ./wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb
+RUN apt install -y ./wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb
 RUN rm wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb
 
 ENV EXIFTOOL_VERSION="13.06"
@@ -30,7 +30,7 @@ RUN gzip "Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz" | tar -xf -
 WORKDIR /app/Image-ExifTool-${EXIFTOOL_VERSION}
 RUN perl Makefile.PL
 RUN make test
-RUN sudo make install
+RUN make install
 
 RUN rm -rf /var/lib/apt/lists/* /app/Image-ExifTool-${EXIFTOOL_VERSION}
 
