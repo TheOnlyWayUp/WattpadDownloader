@@ -126,7 +126,7 @@ def smart_trim(text: str, max_length: int = 400) -> str:
 
 def clean_part_text(text: str) -> str:
     """Remove unnecessary newlines from Text"""
-    soup = BeautifulSoup(text)
+    soup = BeautifulSoup(text, "lxml")
 
     for br in soup.find_all("br"):
         # Check if no content after br
@@ -472,7 +472,7 @@ class EPUBGenerator:
                 title=title,
                 file_name=f"{cidx}_{part['id']}.xhtml",  # See issue #30
                 lang=self.data["language"]["name"],
-                uid=part["id"],
+                uid=str(part["id"]).encode(),
             )
 
             if download_images:
@@ -520,7 +520,7 @@ class EPUBGenerator:
         temp_file = tempfile.NamedTemporaryFile(suffix=".epub", delete=True)
         epub.write_epub(temp_file, self.epub)
 
-        temp_file.file.seek(0)
+        temp_file.seek(0)
 
         return temp_file
 
