@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copyright Page</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f8f8;
+        }
+
+        body {
+            /* Modern flexbox centering */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            
+            /* Fallback for older browsers */
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            
+            -webkit-box-align: center;
+            -webkit-align-items: center;
+            -ms-flex-align: center;
+            
+            -webkit-box-pack: center;
+            -webkit-justify-content: center;
+            -ms-flex-pack: center;
+        }
+
+        /* Table-cell fallback for even older browsers */
+        body:before {
+            content: '';
+            display: inline-block;
+            height: 100%;
+            vertical-align: middle;
+            margin-right: -0.25em;
+        }
+
+        #copyright-container {
+            /* Basic styles */
+            width: 100%;
+            max-width: 600px;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            text-align: center;
+            
+            /* Fallback positioning */
+            display: inline-block;
+            vertical-align: middle;
+            
+            /* Ensure proper margin on all browsers */
+            margin: 20px;
+            
+            /* Prevent overflow issues */
+            box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+        }
+
+        #copyright-notice {
+            font-size: 2rem;
+            color: #2d3748;
+            margin-bottom: 1rem;
+        }
+
+        #copyright-title {
+            font-size: 1.8rem;
+            color: #2d3748;
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+
+        #copyright-ex-libris {
+            font-size: 1.5rem;
+            font-style: italic;
+            color: #4a5568;
+            margin: 2rem 0;
+        }
+
+        .copyright-separator {
+            width: 100%;
+            max-width: 400px;
+            height: 1px;
+            background: #e2e8f0;
+            position: relative;
+            margin: 2rem auto;
+            
+            /* Gradient fallback */
+            background: -webkit-gradient(linear, left top, right top, from(transparent), color-stop(#718096), to(transparent));
+            background: -webkit-linear-gradient(left, transparent, #718096, transparent);
+            background: -moz-linear-gradient(left, transparent, #718096, transparent);
+            background: -o-linear-gradient(left, transparent, #718096, transparent);
+            background: linear-gradient(to right, transparent, #718096, transparent);
+        }
+
+        #copyright-info {
+            max-width: 400px;
+            margin: 0 auto;
+            font-family: 'Garamond', Georgia, serif;
+        }
+
+        #copyright-statement {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #2d3748;
+            margin-bottom: 1rem;
+        }
+
+        #copyright-freedoms,
+        #copyright-printing,
+        #copyright-isbn {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-bottom: 0.8rem;
+        }
+
+        #copyright-book-link {
+            font-size: 0.9rem;
+            color: #3182ce;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 1rem;
+            
+            /* Cross-browser transition */
+            -webkit-transition: all 0.2s ease;
+            -moz-transition: all 0.2s ease;
+            -o-transition: all 0.2s ease;
+            transition: all 0.2s ease;
+        }
+
+        #copyright-book-link:hover {
+            text-decoration: underline;
+            color: #2c5282;
+        }
+
+        /* Simple horizontal line instead of decorative separator for older browsers */
+        @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+            .copyright-separator {
+                border-top: 1px solid #718096;
+                background: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="copyright-container">
+        <h1 id="copyright-notice">Copyright Notice</h1>
+        <h2 id="copyright-title">{book_title}</h2>
+        
+        <div class="copyright-separator"></div>
+        
+        <p id="copyright-ex-libris">Ex Libris Sapientiae</p>
+        
+        <div class="copyright-separator"></div>
+        
+        <div id="copyright-info">
+            {copyright_image}
+            <p id="copyright-statement">
+                {statement}
+            </p>
+            <p id="copyright-freedoms">
+                {freedoms}
+            </p>
+            <p id="copyright-printing">
+                Printing: {printing}
+            </p>
+            <p id="copyright-isbn">
+                ID: {book_id}
+            </p>
+            <a href="https://wattpad.com/story/{book_id}" id="copyright-book-link">
+                View Book Online
+            </a>
+        </div>
+    </div>
+</body>
+</html>

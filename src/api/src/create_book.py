@@ -464,7 +464,7 @@ wp_copyright: Dict[str, CopyrightData] = {
     },
     "2": {
         "name": "Public Domain",
-        "statement": "This work is in the public domain. Originally published in {published_year}.",
+        "statement": "This work is in the public domain. Originally published in {published_year} by {username}.",
         "freedoms": "Free to use for any purpose without permission.",
         "printing": "Allowed for personal or commercial purposes.",
         "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/cc-zero.png",
@@ -590,28 +590,56 @@ class PDFGenerator:
             f'<html><body><img width="993" height="1404" src="data:image/jpg;base64,{b64encode(self.cover).decode()}"></img></body></html>'.encode()  # A4 Size
         )
 
-        # copyright_data = wp_copyright[str(self.data["copyright"])]
-        # copyright_image = (
-        #     await fetch_cover(copyright_data["image_url"])
-        #     if copyright_data["image_url"]
-        #     else None
-        # )
-        # about_copyright = copyright_template.format(
-        #     statement=copyright_data["statement"].format(
-        #         username=self.data["user"]["username"],
-        #         published_year=self.data["createDate"],
-        #     ),
-        #     freedoms=copyright_data["freedoms"],
-        #     printing=copyright_data["printing"],
-        # )
-        # about_copyright = (
-        #     about_copyright.replace(
-        #         "{avatar}",
-        #         f"data:image/jpg;base64,{b64encode(copyright_image).decode()}",
-        #     )
-        #     if copyright_image
-        #     else about_copyright.replace("{avatar}", "")
-        # )
+        with open("./pdf/copyright.html") as reader:
+            copyright_template = reader.read()
+
+        copyright_data = wp_copyright[str(self.data["copyright"])]
+        copyright_image = (
+            await fetch_cover(copyright_data["image_url"])
+            if copyright_data["image_url"]
+            else None
+        )
+        about_copyright = (
+            copyright_template.replace(
+                "{statement}",
+                copyright_data["statement"].format(
+                    username=self.data["user"]["username"],
+                    published_year=self.data["createDate"].split("-", 2)[0],
+                ),
+            )
+            .replace("{freedoms}", copyright_data["freedoms"])
+            .replace(
+                "{printing}",
+                copyright_data["printing"],
+            )
+            .replace("{book_id}", self.data["id"])
+            .replace("{book_title}", self.data["title"])
+        )
+
+        image_block = (
+            """<img src="{image_url}" 
+alt="{name}" 
+width="88" 
+height="31" 
+style="margin-bottom: 1rem;">""".format(
+                image_url=f"data:image/jpg;base64,{b64encode(copyright_image).decode()}",
+                name=copyright_data["name"],
+            )
+            if copyright_image
+            else ""
+        )
+        about_copyright = (
+            about_copyright.replace(
+                "{copyright_image}",
+                image_block,
+            )
+            if image_block
+            else about_copyright.replace("{copyright_image}", "")
+        )
+        about_copyright_file = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
+        about_copyright_file.write(about_copyright.encode())
+        chapters.insert(0, about_copyright_file)
+        about_copyright_file.seek(0)
 
         author_avatar = (
             await fetch_cover(
