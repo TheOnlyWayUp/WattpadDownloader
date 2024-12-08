@@ -7,7 +7,7 @@ from io import BytesIO
 from enum import Enum
 from eliot import start_action
 from aiohttp import ClientResponseError
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -92,7 +92,7 @@ def home():
 
 
 @app.exception_handler(ClientResponseError)
-def download_error_handler(exception: ClientResponseError):
+def download_error_handler(request: Request, exception: ClientResponseError):
     match exception.status:
         case 400 | 404:
             return HTMLResponse(
@@ -114,7 +114,7 @@ def download_error_handler(exception: ClientResponseError):
 
 
 @app.exception_handler(WattpadError)
-def download_wp_error_handler(exception: WattpadError):
+def download_wp_error_handler(request: Request, exception: WattpadError):
     if isinstance(exception, StoryNotFoundError):
         return HTMLResponse(
             status_code=404,
