@@ -245,7 +245,7 @@ story_ta = TypeAdapter(Story)
 
 # --- PDF Dependencies --- #
 
-wp_copyright: Dict[int, CopyrightData] = {
+wp_copyright_data: Dict[int, CopyrightData] = {
     1: {
         "name": "All Rights Reserved",
         "statement": "©️ {published_year} by {username}. All Rights Reserved.",
@@ -404,11 +404,11 @@ async def fetch_part_content(part_id: int, cookies: Optional[dict] = None) -> st
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def fetch_cover(url: str) -> bytes:
-    """Fetch cover image bytes."""
-    with start_action(action_type="api_fetch_cover", url=url):
+async def fetch_image(url: str, should_cache: bool = False) -> bytes:
+    """Fetch image bytes."""
+    with start_action(action_type="api_fetch_image", url=url):
         async with CachedSession(
-            headers=headers, cache=None
+            headers=headers, cache=cache if should_cache else None
         ) as session:  # Don't cache images.
             async with session.get(url) as response:
                 response.raise_for_status()
@@ -534,6 +534,94 @@ class PDFGenerator:
         self.file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=True)
         self.cover = cover
 
+    async def genernate_cover_and_copyright_file(
+        self,
+    ) -> tempfile._TemporaryFileWrapper:
+        """Generate Cover and Copyright file, fetch copyright image (cached), use self.cover for cover."""
+
+        copyright_data = wp_copyright_data[self.data["copyright"]]
+        about_copyright = (
+            copyright_template.replace(
+                "{statement}",
+                copyright_data["statement"].format(
+                    username=self.data["user"]["username"],
+                    published_year=self.data["createDate"].split("-", 2)[0],
+                ),
+            )
+            .replace("{freedoms}", copyright_data["freedoms"])
+            .replace(
+                "{printing}",
+                copyright_data["printing"],
+            )
+            .replace("{book_id}", self.data["id"])
+            .replace("{book_title}", self.data["title"])
+        )
+
+        copyright_image = (
+            await fetch_image(copyright_data["image_url"], should_cache=True)
+            if copyright_data["image_url"]
+            else None
+        )
+        image_block = (
+            """<img src="{image_url}" 
+alt="{name}" 
+width="88" 
+height="31" 
+style="margin-bottom: 1rem;">""".format(
+                image_url=f"data:image/jpg;base64,{b64encode(copyright_image).decode()}",
+                name=copyright_data["name"],
+            )
+            if copyright_image
+            else ""
+        )
+        about_copyright = (
+            about_copyright.replace(
+                "{copyright_image}",
+                image_block,
+            )
+            if image_block
+            else about_copyright.replace("{copyright_image}", "")
+        )
+        about_copyright = about_copyright.replace(
+            "{cover}", f"data:image/jpg;base64,{b64encode(self.cover).decode()}"
+        )
+
+        cover_and_copyright_file = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=True
+        )
+        cover_and_copyright_file.write(about_copyright.encode())
+        cover_and_copyright_file.seek(0)
+
+        return cover_and_copyright_file
+
+    async def generate_about_author_file(self) -> tempfile._TemporaryFileWrapper:
+        """Generate About the Author file, fetch avatar."""
+        author_avatar = (
+            await fetch_image(
+                self.data["user"]["avatar"].replace("128", "512")
+            )  # Increase image resolution
+            if self.data["user"]["avatar"]
+            else None
+        )
+        about_author = author_template.replace(
+            "{username}", self.data["user"]["username"]
+        ).replace("{description}", smart_trim(self.data["user"]["description"]))
+
+        about_author = (
+            about_author.replace(
+                "{avatar}",
+                f"""
+                <img src="data:image/jpg;base64,{b64encode(author_avatar).decode()}" alt="Author's profile picture" id="author-profile-picture">""",
+            )
+            if author_avatar
+            else about_author.replace("{avatar}", "")
+        )
+        about_author_file = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
+        about_author_file.write(about_author.encode())
+        about_author_file.seek(0)
+
+        return about_author_file
+
     async def add_chapters(self, contents: List[str], download_images: bool = False):
         """Add chapters to the PDF, downloading images if necessary. Also add Cover, Copyright, and About the Author pages."""
 
@@ -577,134 +665,80 @@ class PDFGenerator:
             yield part["title"]
 
         # Cover and Copyright Page
-        copyright_data = wp_copyright[self.data["copyright"]]
-        about_copyright = (
-            copyright_template.replace(
-                "{statement}",
-                copyright_data["statement"].format(
-                    username=self.data["user"]["username"],
-                    published_year=self.data["createDate"].split("-", 2)[0],
-                ),
-            )
-            .replace("{freedoms}", copyright_data["freedoms"])
-            .replace(
-                "{printing}",
-                copyright_data["printing"],
-            )
-            .replace("{book_id}", self.data["id"])
-            .replace("{book_title}", self.data["title"])
-        )
-
-        copyright_image = (
-            await fetch_cover(copyright_data["image_url"])
-            if copyright_data["image_url"]
-            else None
-        )
-        image_block = (
-            """<img src="{image_url}" 
-alt="{name}" 
-width="88" 
-height="31" 
-style="margin-bottom: 1rem;">""".format(
-                image_url=f"data:image/jpg;base64,{b64encode(copyright_image).decode()}",
-                name=copyright_data["name"],
-            )
-            if copyright_image
-            else ""
-        )
-        about_copyright = (
-            about_copyright.replace(
-                "{copyright_image}",
-                image_block,
-            )
-            if image_block
-            else about_copyright.replace("{copyright_image}", "")
-        )
-        about_copyright = about_copyright.replace(
-            "{cover}", f"data:image/jpg;base64,{b64encode(self.cover).decode()}"
-        )
-
-        cover_and_copyright_file = tempfile.NamedTemporaryFile(
-            suffix=".html", delete=True
-        )
-        cover_and_copyright_file.write(about_copyright.encode())
-        cover_and_copyright_file.seek(0)
+        cover_and_copyright_file = await self.genernate_cover_and_copyright_file()
 
         # About the Author page
-        author_avatar = (
-            await fetch_cover(
-                self.data["user"]["avatar"].replace("128", "512")
-            )  # Increase image resolution
-            if self.data["user"]["avatar"]
-            else None
-        )
-        about_author = author_template.replace(
-            "{username}", self.data["user"]["username"]
-        ).replace("{description}", smart_trim(self.data["user"]["description"]))
-
-        about_author = (
-            about_author.replace(
-                "{avatar}",
-                f"""
-                <img src="data:image/jpg;base64,{b64encode(author_avatar).decode()}" alt="Author's profile picture" id="author-profile-picture">""",
-            )
-            if author_avatar
-            else about_author.replace("{avatar}", "")
-        )
-        about_author_file = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
-        about_author_file.write(about_author.encode())
+        about_author_file = await self.generate_about_author_file()
         chapters.append(about_author_file)
-        about_author_file.seek(0)
 
-        # PDF Generation with wkhtmltopdf, written to self.file
-        pdfkit.from_file(
-            [chapter.file.name for chapter in chapters],
-            self.file.name,
-            cover=cover_and_copyright_file.file.name,
-            toc={
-                "toc-header-text": "Table of Contents",
-                "xsl-style-sheet": "./pdf/toc.xsl",
-            },
-            options={
-                "footer-html": "./pdf/footer.html",
-                "margin-top": "10mm",
-                "margin-bottom": "10mm",
-                "title": self.data["title"],
-                "encoding": "UTF-8",
-                "user-style-sheet": "./pdf/stylesheet.css",
-                "enable-local-file-access": "",
-            },
-            cover_first=True,
-        )
+        chapter_filenames = [chapter.file.name for chapter in chapters]
 
-        # Metadata generation with Exiftool
-        clean_description = (
-            self.data["description"].strip().replace("\n", "$/")
-        )  # exiftool doesn't parse \ns correctly, they support $/ for the same instead. `&#xa;` is another option.
-        metadata = {
-            "Author": self.data["user"]["username"],
-            "Title": self.data["title"],
-            "Subject": clean_description,
-            "CreationDate": self.data["createDate"],
-            "ModDate": self.data["modifyDate"],
-            "Keywords": ",".join(self.data["tags"]),
-            "Language": self.data["language"]["name"],
-            "Completed": self.data["completed"],
-            "MatureContent": self.data["mature"],
-            "Producer": "Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader",
-        }  # As per https://exiftool.org/TagNames/PDF.html
+        with start_action(
+            action_type="generate_pdf",
+            chapter_filenames=chapter_filenames,
+            output_filename=self.file.name,
+            cover_filename=cover_and_copyright_file.file.name,
+            title=self.data["title"],
+        ):
+            # PDF Generation with wkhtmltopdf, written to self.file
 
-        with ExifTool(config_file="../exiftool.config", logger=logger) as et:
-            # Custom configuration adds Completed and MatureContent tags.
-            et.execute(
-                *(
-                    [f"-{key}={value}" for key, value in metadata.items()]
-                    + [
-                        "-overwrite_original",
-                        self.file.file.name,
-                    ]
-                )
+            pdfkit.from_file(
+                chapter_filenames,
+                self.file.name,
+                cover=cover_and_copyright_file.file.name,
+                toc={
+                    "toc-header-text": "Table of Contents",
+                    "xsl-style-sheet": "./pdf/toc.xsl",
+                },
+                options={
+                    "footer-html": "./pdf/footer.html",
+                    "margin-top": "10mm",
+                    "margin-bottom": "10mm",
+                    "title": self.data["title"],
+                    "encoding": "UTF-8",
+                    "user-style-sheet": "./pdf/stylesheet.css",
+                    "enable-local-file-access": "",
+                },
+                cover_first=True,
             )
+
+        with start_action(action_type="add_metadata") as action:
+            # Metadata generation with Exiftool
+            clean_description = (
+                self.data["description"].strip().replace("\n", "$/")
+            )  # exiftool doesn't parse \ns correctly, they support $/ for the same instead. `&#xa;` is another option.
+
+            action.log(f"clean_description: {clean_description}")
+
+            metadata = {
+                "Author": self.data["user"]["username"],
+                "Title": self.data["title"],
+                "Subject": clean_description,
+                "CreationDate": self.data["createDate"],
+                "ModDate": self.data["modifyDate"],
+                "Keywords": ",".join(self.data["tags"]),
+                "Language": self.data["language"]["name"],
+                "Completed": self.data["completed"],
+                "MatureContent": self.data["mature"],
+                "Producer": "Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader",
+            }  # As per https://exiftool.org/TagNames/PDF.html
+
+            action.log(f"options: {metadata}")
+
+            with ExifTool(
+                config_file="../exiftool.config", logger=exiftool_logger
+            ) as et:
+                # Custom configuration adds Completed and MatureContent tags.
+                # exiftool logger logs executed command
+                et.execute(
+                    *(
+                        [f"-{key}={value}" for key, value in metadata.items()]
+                        + [
+                            "-overwrite_original",
+                            self.file.file.name,
+                        ]
+                    )
+                )
 
         # Close files and delete them from tmp
         for chapter in chapters:

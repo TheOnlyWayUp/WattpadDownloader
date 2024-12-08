@@ -21,7 +21,7 @@ from create_book import (
     fetch_story,
     fetch_story_from_partId,
     fetch_part_content,
-    fetch_cover,
+    fetch_image,
     fetch_cookies,
     WattpadError,
     StoryNotFoundError,
@@ -167,7 +167,7 @@ async def handle_download(
             case DownloadMode.part:
                 story_id, metadata = await fetch_story_from_partId(download_id, cookies)
 
-        cover_data = await fetch_cover(
+        cover_data = await fetch_image(
             metadata["cover"].replace("-256-", "-512-")
         )  # Increase resolution
 
