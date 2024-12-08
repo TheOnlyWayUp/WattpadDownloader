@@ -13,20 +13,23 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install git, wkhtmltopdf (https://raw.githubusercontent.com/JazzCore/python-pdfkit/b7bf798b946fa5655f8e82f0d80dec6b6b13d414/ci/before-script.sh)
+# Install git, wkhtmltopdf (https://raw.githubusercontent.com/JazzCore/python-pdfkit/b7bf798b946fa5655f8e82f0d80dec6b6b13d414/ci/before-script.sh), exiftool
 RUN apt update
 
-RUN apt install -y git
+RUN apt install -y git build-essential xorg libssl-dev libxrender-dev wget
 
-ENV WKHTML2PDF_VERSION='0.12.6-1'
-RUN apt install -y build-essential xorg libssl-dev libxrender-dev wget
-RUN wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTML2PDF_VERSION}/wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb"
-RUN apt install -y ./wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb
-RUN rm wkhtmltox_${WKHTML2PDF_VERSION}.bionic_amd64.deb
+# Thanks https://www.reddit.com/r/linux4noobs/comments/1adnavi/comment/kk2uq7u
+# RUN wget https://archive.debian.org/debian/pool/main/libj/libjpeg8/libjpeg8_8b-1_amd64.deb
+# RUN apt install ./libjpeg8_8b-1_amd64.deb 
+
+ENV WKHTML2PDF_VERSION='0.12.6.1-3'
+RUN wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTML2PDF_VERSION}/wkhtmltox_${WKHTML2PDF_VERSION}.bookworm_amd64.deb"
+RUN apt install -y ./wkhtmltox_${WKHTML2PDF_VERSION}.bookworm_amd64.deb
+RUN rm wkhtmltox_${WKHTML2PDF_VERSION}.bookworm_amd64.deb
 
 ENV EXIFTOOL_VERSION="13.06"
 RUN wget "https://exiftool.org/Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz"
-RUN gzip "Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz" | tar -xf -
+RUN gzip -dc "Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz" | tar -xf -
 WORKDIR /app/Image-ExifTool-${EXIFTOOL_VERSION}
 RUN perl Makefile.PL
 RUN make test
