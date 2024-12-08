@@ -272,6 +272,7 @@
           <div class="grid justify-center grid-rows-2 gap-y-10">
             <a
               href="/donate"
+              target="_blank"
               class="btn bg-cyan-200 btn-lg mt-10 hover:bg-green-200"
               >Buy me a Coffee! 🍵</a
             >
