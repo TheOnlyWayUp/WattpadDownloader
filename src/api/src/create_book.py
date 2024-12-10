@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple, cast
 from typing_extensions import TypedDict
 import re
 import json
@@ -244,72 +244,6 @@ class Story(TypedDict):
 
 story_ta = TypeAdapter(Story)
 
-# --- PDF Dependencies --- #
-
-wp_copyright_data: Dict[int, CopyrightData] = {
-    1: {
-        "name": "All Rights Reserved",
-        "statement": "©️ {published_year} by {username}. All Rights Reserved.",
-        "freedoms": "No reuse, redistribution, or modification without permission.",
-        "printing": "Not allowed without explicit permission.",
-        "image_url": None,
-    },
-    2: {
-        "name": "Public Domain",
-        "statement": "This work is in the public domain. Originally published in {published_year} by {username}.",
-        "freedoms": "Free to use for any purpose without permission.",
-        "printing": "Allowed for personal or commercial purposes.",
-        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/cc-zero.png",
-    },
-    3: {
-        "name": "Creative Commons Attribution (CC-BY)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution 4.0 International License.",
-        "freedoms": "Allows reuse, redistribution, and modification with credit to the author.",
-        "printing": "Allowed with proper credit.",
-        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png",
-    },
-    4: {
-        "name": "CC Attribution NonCommercial (CC-BY-NC)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.",
-        "freedoms": "Allows reuse and modification for non-commercial purposes with credit.",
-        "printing": "Allowed for non-commercial purposes with proper credit.",
-        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png",
-    },
-    5: {
-        "name": "CC Attribution NonCommercial NoDerivs (CC-BY-NC-ND)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License.",
-        "freedoms": "Allows sharing in original form for non-commercial purposes with credit; no modifications allowed.",
-        "printing": "Allowed for non-commercial purposes in original form with proper credit.",
-        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-nd.png",
-    },
-    6: {
-        "name": "CC Attribution NonCommercial ShareAlike (CC-BY-NC-SA)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.",
-        "freedoms": "Allows reuse and modification for non-commercial purposes under the same license, with credit.",
-        "printing": "Allowed for non-commercial purposes with proper credit under the same license.",
-        "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-sa.png",
-    },
-    7: {
-        "name": "CC Attribution ShareAlike (CC-BY-SA)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.",
-        "freedoms": "Allows reuse and modification for any purpose under the same license, with credit.",
-        "printing": "Allowed with proper credit under the same license.",
-        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png",
-    },
-    8: {
-        "name": "CC Attribution NoDerivs (CC-BY-ND)",
-        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NoDerivs 4.0 International License.",
-        "freedoms": "Allows sharing in original form for any purpose with credit; no modifications allowed.",
-        "printing": "Allowed in original form with proper credit.",
-        "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nd.png",
-    },
-}
-
-
-with open("./pdf/cover_and_copyright.html") as reader:
-    copyright_template = reader.read()
-with open("./pdf/author.html") as reader:
-    author_template = reader.read()
 
 # --- Exceptions --- #
 
@@ -534,21 +468,88 @@ class PDFGenerator:
         self.data = data
         self.file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=True)
         self.cover = cover
+        self.content: str = ""
+        self.copyright = {
+            1: {
+                "name": "All Rights Reserved",
+                "statement": "©️ {published_year} by {username}. All Rights Reserved.",
+                "freedoms": "No reuse, redistribution, or modification without permission.",
+                "printing": "Not allowed without explicit permission.",
+                "image_url": None,
+            },
+            2: {
+                "name": "Public Domain",
+                "statement": "This work is in the public domain. Originally published in {published_year} by {username}.",
+                "freedoms": "Free to use for any purpose without permission.",
+                "printing": "Allowed for personal or commercial purposes.",
+                "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/cc-zero.png",
+            },
+            3: {
+                "name": "Creative Commons Attribution (CC-BY)",
+                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution 4.0 International License.",
+                "freedoms": "Allows reuse, redistribution, and modification with credit to the author.",
+                "printing": "Allowed with proper credit.",
+                "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png",
+            },
+            4: {
+                "name": "CC Attribution NonCommercial (CC-BY-NC)",
+                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.",
+                "freedoms": "Allows reuse and modification for non-commercial purposes with credit.",
+                "printing": "Allowed for non-commercial purposes with proper credit.",
+                "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png",
+            },
+            5: {
+                "name": "CC Attribution NonCommercial NoDerivs (CC-BY-NC-ND)",
+                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License.",
+                "freedoms": "Allows sharing in original form for non-commercial purposes with credit; no modifications allowed.",
+                "printing": "Allowed for non-commercial purposes in original form with proper credit.",
+                "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-nd.png",
+            },
+            6: {
+                "name": "CC Attribution NonCommercial ShareAlike (CC-BY-NC-SA)",
+                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.",
+                "freedoms": "Allows reuse and modification for non-commercial purposes under the same license, with credit.",
+                "printing": "Allowed for non-commercial purposes with proper credit under the same license.",
+                "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-sa.png",
+            },
+            7: {
+                "name": "CC Attribution ShareAlike (CC-BY-SA)",
+                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.",
+                "freedoms": "Allows reuse and modification for any purpose under the same license, with credit.",
+                "printing": "Allowed with proper credit under the same license.",
+                "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png",
+            },
+            8: {
+                "name": "CC Attribution NoDerivs (CC-BY-ND)",
+                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NoDerivs 4.0 International License.",
+                "freedoms": "Allows sharing in original form for any purpose with credit; no modifications allowed.",
+                "printing": "Allowed in original form with proper credit.",
+                "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nd.png",
+            },
+        }
 
-    async def genernate_cover_and_copyright_file(
+        with open("./pdf/stylesheet.css") as reader:
+            self.stylesheet = reader.read()
+        with open("./pdf/book.html") as reader:
+            self.template = reader.read()
+
+    async def genernate_cover_and_copyright_html(
         self,
-    ) -> tempfile._TemporaryFileWrapper:
+    ) -> str:
         """Generate Cover and Copyright file, fetch copyright image (cached), use self.cover for cover."""
 
-        copyright_data = wp_copyright_data[self.data["copyright"]]
+        copyright_data = self.copyright[self.data["copyright"]]
+
+        template = self.template
         about_copyright = (
-            copyright_template.replace(
+            template.replace(
                 "{statement}",
                 copyright_data["statement"].format(
                     username=self.data["user"]["username"],
                     published_year=self.data["createDate"].split("-", 2)[0],
                 ),
             )
+            .replace("{author}", self.data["user"]["username"])
             .replace("{freedoms}", copyright_data["freedoms"])
             .replace(
                 "{printing}",
@@ -568,7 +569,7 @@ class PDFGenerator:
 alt="{name}" 
 width="88" 
 height="31" 
-style="margin-bottom: 1rem;">""".format(
+id="copyright-license-image">""".format(
                 image_url=f"data:image/jpg;base64,{b64encode(copyright_image).decode()}",
                 name=copyright_data["name"],
             )
@@ -587,15 +588,10 @@ style="margin-bottom: 1rem;">""".format(
             "{cover}", f"data:image/jpg;base64,{b64encode(self.cover).decode()}"
         )
 
-        cover_and_copyright_file = tempfile.NamedTemporaryFile(
-            suffix=".html", delete=True
-        )
-        cover_and_copyright_file.write(about_copyright.encode())
-        cover_and_copyright_file.seek(0)
+        self.template = about_copyright
+        return about_copyright
 
-        return cover_and_copyright_file
-
-    async def generate_about_author_file(self) -> tempfile._TemporaryFileWrapper:
+    async def generate_about_author_chapter(self) -> str:
         """Generate About the Author file, fetch avatar."""
         author_avatar = (
             await fetch_image(
@@ -604,7 +600,7 @@ style="margin-bottom: 1rem;">""".format(
             if self.data["user"]["avatar"]
             else None
         )
-        about_author = author_template.replace(
+        about_author = self.template.replace(
             "{username}", self.data["user"]["username"]
         ).replace("{description}", smart_trim(self.data["user"]["description"]))
 
@@ -617,11 +613,101 @@ style="margin-bottom: 1rem;">""".format(
             if author_avatar
             else about_author.replace("{avatar}", "")
         )
-        about_author_file = tempfile.NamedTemporaryFile(suffix=".html", delete=True)
-        about_author_file.write(about_author.encode())
-        about_author_file.seek(0)
 
-        return about_author_file
+        return about_author
+
+    def generate_clean_part_html(self, part: Part, content: str):
+        chapter_title = part["title"]
+        chapter_id = part["id"]
+
+        clean = BeautifulSoup(
+            f"""
+        <section id="section_{chapter_id}" class="chapitre">
+            <h1 id="{chapter_id}" class="chapter-title">{chapter_title}</h1>
+        </section>
+        """,
+            "html.parser",
+        )  # html.parser doesn't create <html>/<body> tags automatically
+        html = BeautifulSoup(content, "lxml")
+
+        section = clean.find("section")
+        if not section:
+            raise Exception()
+
+        for child in html.find_all("p"):
+            for p_child in list(child.children):
+                if not p_child:
+                    continue
+                if isinstance(p_child, bs4.element.Tag):
+                    if p_child.name == "br":
+                        p_child.decompose()
+                    elif p_child.name == "img":
+                        src = p_child["src"]
+                        img_tag = clean.new_tag("img")
+                        img_tag["src"] = src
+                        break_tag = clean.new_tag("br")
+                        section.append(img_tag)
+                        section.append(break_tag)
+                    elif p_child.name == "b":
+                        content = p_child.text
+                        p_tag = clean.new_tag("p")
+                        bold_tag = clean.new_tag("b")
+                        bold_content = clean.new_string(content)
+
+                        bold_tag.append(bold_content)
+                        p_tag.append(bold_tag)
+
+                        section.append(p_tag)
+
+                    elif p_child.name == "i":
+                        content = p_child.text
+                        p_tag = clean.new_tag("p")
+                        italic_tag = clean.new_tag("i")
+                        italic_content = clean.new_string(content)
+
+                        italic_tag.append(italic_content)
+                        p_tag.append(italic_tag)
+
+                        section.append(p_tag)
+
+                elif isinstance(p_child, bs4.element.NavigableString):
+                    content = p_child.text
+                    p_tag = clean.new_tag("p")
+                    p_content = clean.new_string(content)
+                    p_tag.append(p_content)
+                    section.append(p_tag)
+
+            if not list(child.children):
+                # Some p tags only contain brs, once brs are removed, they are empty and can be removed as well.
+                child.decompose()
+
+        insert_point = cast(bs4.Tag, self.tree.find("div", {"id": "book"}))
+        insert_point.append(section)
+        return str(clean)
+
+    def generate_toc(self):
+        ids = [part["id"] for part in self.data["parts"]]
+        clean = BeautifulSoup(
+            """
+        <section id="contents" class="toc">
+        <h2>Table of Contents</h2>
+        <ul></ul>
+        </section>
+        """,
+            "html.parser",
+        )  # html.parser doesn't create <html>/<body> tags automatically
+
+        ul = cast(bs4.Tag, clean.find("ul"))
+        for part_id in ids:
+            li = clean.new_tag("li")
+            a = clean.new_tag("a")
+            a["href"] = f"#{part_id}"
+            li.append(a)
+            ul.append(li)
+
+        insert_point = cast(bs4.Tag, self.tree.find("div", {"id": "book"}))
+        insert_point.append(clean)
+        return str(clean)
 
     async def add_chapters(self, contents: List[str], download_images: bool = False):
         """Add chapters to the PDF, downloading images if necessary. Also add Cover, Copyright, and About the Author pages."""
