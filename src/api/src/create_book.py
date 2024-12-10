@@ -10,8 +10,10 @@ from os import environ
 from io import BytesIO
 from enum import Enum
 from base64 import b64encode
+import bs4
 import backoff
-import pdfkit
+from weasyprint import HTML, CSS, default_url_fetcher
+from weasyprint.text.fonts import FontConfiguration
 from ebooklib import epub
 from exiftool import ExifTool
 from eliot import to_file, start_action
@@ -712,86 +714,38 @@ id="copyright-license-image">""".format(
     async def add_chapters(self, contents: List[str], download_images: bool = False):
         """Add chapters to the PDF, downloading images if necessary. Also add Cover, Copyright, and About the Author pages."""
 
-        chapters: List[tempfile._TemporaryFileWrapper] = []
+        # # Cover and Copyright Page
+        await self.genernate_cover_and_copyright_html()
+        await self.generate_about_author_chapter()
+        self.tree = BeautifulSoup(self.template)
 
+        self.generate_toc()
         for part, content in zip(self.data["parts"], contents):
-            html = BeautifulSoup(content, features="lxml")
-            image_sources: List[str] = []
-
-            for image_container in html.find_all("p", {"data-media-type": "image"}):
-                # Find all images, download them if download_images, else clear them (else wkhtmltopdf _might_ fetch them)
-                img = image_container.findChild("img")
-                if not img:
-                    image_container.decompose()  # If empty, delete parent (ex: <p data-image-layout="one-horizontal" data-media-type="image" data-p-id="bb6e18f2bb7d13f317bb6ccded04899b">            </p>)
-                    continue
-                source = img.get("src")
-                if not download_images and source:
-                    img["src"] = ""
-                image_container.replace_with(img)
-                image_sources.append(source)
-
-            writable_html = str(html)
-            if download_images:
-                async with CachedSession(cache=None) as session:  # Don't cache images
-                    for image_url in image_sources:
-                        async with session.get(image_url) as response:
-                            response.raise_for_status()
-
-                            image = await response.read()
-
-                            writable_html = writable_html.replace(
-                                image_url,
-                                f"data:image/jpg;base64,{b64encode(image).decode()}",
-                            )  # Base64-encoded images are better than referencing NamedTemporaryFiles as it's less access to the local filesystem, the enable-local-file-access would be disabled if not for local fonts.
-
-            tempie = tempfile.NamedTemporaryFile(
-                suffix=".html", delete=True
-            )  # tempie 🫡
-            tempie.write(writable_html.encode())
-            tempie.file.seek(0)
-
-            chapters.append(tempie)
-
+            self.generate_clean_part_html(part, content)
             yield part["title"]
 
-        # Cover and Copyright Page
-        cover_and_copyright_file = await self.genernate_cover_and_copyright_file()
+        # # About the Author page
+        # about_author_html = await self.generate_about_author_chapter()
 
-        # About the Author page
-        about_author_file = await self.generate_about_author_file()
-        chapters.append(about_author_file)
-
-        chapter_filenames = [chapter.file.name for chapter in chapters]
+        # chapters.insert(0, cover_and_copyright_html)
+        # chapters.append(about_author_html)
 
         with start_action(
             action_type="generate_pdf",
-            chapter_filenames=chapter_filenames,
             output_filename=self.file.name,
-            cover_filename=cover_and_copyright_file.file.name,
             title=self.data["title"],
         ):
             # PDF Generation with wkhtmltopdf, written to self.file
 
             # At this stage, we have a bunch of HTML Files representing all the chapters that need to be generated. PDFKit handles ToC generation, so that's not included.
 
-            pdfkit.from_file(
-                chapter_filenames,
-                self.file.name,
-                cover=cover_and_copyright_file.file.name,
-                toc={
-                    "toc-header-text": "Table of Contents",
-                    "xsl-style-sheet": "./pdf/toc.xsl",
-                },
-                options={
-                    "footer-html": "./pdf/footer.html",
-                    "margin-top": "10mm",
-                    "margin-bottom": "10mm",
-                    "title": self.data["title"],
-                    "encoding": "UTF-8",
-                    "user-style-sheet": "./pdf/stylesheet.css",
-                    "enable-local-file-access": "",
-                },
-                cover_first=True,
+            font_config = FontConfiguration()
+
+            stylesheet_obj = CSS(string=self.stylesheet, font_config=font_config)
+
+            html_obj = HTML(string=str(self.tree))
+            html_obj.write_pdf(
+                self.file.name, stylesheets=[stylesheet_obj], font_config=font_config
             )
 
         with start_action(action_type="add_metadata") as action:
