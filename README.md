@@ -8,14 +8,17 @@ Straightforward, Extendable WebApp to download Wattpad Books as EPUB Files.
 Stars ⭐ are appreciated. Thanks!
 
 ## Features
-- ⚡ Lightweight Frontend and Minimal Javascript.
+- ⚡ Lightweight Frontend.
 - 🪙 Supports Authentication (Download paid stories from your account!)
 - 🌐 API Support (Visit the `/docs` path on your instance for more.)
-- 🐇 Fast Generation, Ratelimit Handling.
+- 🐇 Fast Generation
+- 🗃️ Caching, Ratelimit handling
 - 🐳 Docker Support
-- 🏷️ Generated EPUB File includes Metadata. (Dublin Core Spec)
-- 📖 Plays well with E-Readers. (Kindle Support with Send2Kindle, ReMarkable, KOBO, KOReader...)
+- 🏷️ Generated books contain metadata, supported by Calibre and other E-Book Software.
+- 📖 Plays well with E-Readers. (Send2Kindle, KOReader, ReMarkable, KOBO, Calibre Reader...)
 - 💻 Easily Hackable. Extend with ease.
+
+Still not convinced? Take a look some [sample downloads](./samples/).
 
 
 ## Set Up

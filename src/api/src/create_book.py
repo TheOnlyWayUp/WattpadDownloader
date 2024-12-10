@@ -686,6 +686,8 @@ style="margin-bottom: 1rem;">""".format(
         ):
             # PDF Generation with wkhtmltopdf, written to self.file
 
+            # At this stage, we have a bunch of HTML Files representing all the chapters that need to be generated. PDFKit handles ToC generation, so that's not included.
+
             pdfkit.from_file(
                 chapter_filenames,
                 self.file.name,
