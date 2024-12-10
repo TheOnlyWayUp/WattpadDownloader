@@ -3,7 +3,6 @@
 from typing import Optional
 import asyncio
 from pathlib import Path
-from io import BytesIO
 from enum import Enum
 from eliot import start_action
 from aiohttp import ClientResponseError
@@ -192,12 +191,10 @@ async def handle_download(
         ):
             ...
 
-        book_file = book.dump().file
-        book_bytes = book_file.read()
-        book_file.close()  # Deletes tempfile
+        book_buffer = book.dump()
 
         return StreamingResponse(
-            BytesIO(book_bytes),
+            book_buffer,
             media_type=media_type,
             headers={
                 "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"'  # Thanks https://stackoverflow.com/a/72729058

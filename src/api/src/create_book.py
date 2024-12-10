@@ -7,6 +7,7 @@ import logging
 import tempfile
 import unicodedata
 from os import environ
+from io import BytesIO
 from enum import Enum
 from base64 import b64encode
 import backoff
@@ -515,14 +516,14 @@ class EPUBGenerator:
         # create spine
         self.epub.spine = ["nav"] + chapters
 
-    def dump(self) -> tempfile._TemporaryFileWrapper[bytes]:
+    def dump(self) -> BytesIO:
         # Thanks https://stackoverflow.com/a/75398222
-        temp_file = tempfile.NamedTemporaryFile(suffix=".epub", delete=True)
-        epub.write_epub(temp_file, self.epub)
+        buffer = BytesIO()
+        epub.write_epub(buffer, self.epub)
 
-        temp_file.seek(0)
+        buffer.seek(0)
 
-        return temp_file
+        return buffer
 
 
 class PDFGenerator:
@@ -634,6 +635,9 @@ style="margin-bottom: 1rem;">""".format(
             for image_container in html.find_all("p", {"data-media-type": "image"}):
                 # Find all images, download them if download_images, else clear them (else wkhtmltopdf _might_ fetch them)
                 img = image_container.findChild("img")
+                if not img:
+                    image_container.decompose()  # If empty, delete parent (ex: <p data-image-layout="one-horizontal" data-media-type="image" data-p-id="bb6e18f2bb7d13f317bb6ccded04899b">            </p>)
+                    continue
                 source = img.get("src")
                 if not download_images and source:
                     img["src"] = ""
@@ -744,10 +748,12 @@ style="margin-bottom: 1rem;">""".format(
         for chapter in chapters:
             chapter.file.close()
 
-    def dump(self) -> PDFGenerator:
+    def dump(self) -> BytesIO:
         self.file.seek(0)
+        buffer = BytesIO(self.file.read())
+        self.file.close()
 
-        return self
+        return buffer
 
 
 # ------ #
