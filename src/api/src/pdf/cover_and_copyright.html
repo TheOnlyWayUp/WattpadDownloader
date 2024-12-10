@@ -63,7 +63,7 @@
             margin: 2rem 0;
         }
 
-        .copyright-separator {
+        #copyright-separator {
             width: 100%;
             max-width: 400px;
             height: 1px;
@@ -121,7 +121,7 @@
 
         /* Simple horizontal line instead of decorative separator for older browsers */
         @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
-            .copyright-separator {
+            #copyright-separator {
                 border-top: 1px solid #718096;
                 background: none;
             }
@@ -137,11 +137,11 @@
         <h1 id="copyright-notice">Copyright Notice</h1>
         <h2 id="copyright-title">{book_title}</h2>
         
-        <div class="copyright-separator"></div>
+        <div id="copyright-separator"></div>
         
         <p id="copyright-ex-libris">Ex Libris Sapientiae</p>
         
-        <div class="copyright-separator"></div>
+        <div id="copyright-separator"></div>
         
         <div id="copyright-info">
             {copyright_image}

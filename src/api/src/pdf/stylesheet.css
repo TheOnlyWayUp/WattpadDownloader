@@ -68,3 +68,23 @@ p {
   line-height: 1.6 !important; /* Improve readability */
   margin: 10px 0 !important; /* Space between paragraphs */
 }
+
+
+a {
+  font-size: 0.9rem;
+  color: #3182ce;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 1rem;
+  
+  /* Cross-browser transition */
+  -webkit-transition: all 0.2s ease;
+  -moz-transition: all 0.2s ease;
+  -o-transition: all 0.2s ease;
+  transition: all 0.2s ease;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: #2c5282;
+}
