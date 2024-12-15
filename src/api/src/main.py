@@ -165,7 +165,7 @@ async def handle_download(
 
         temp_file.file.seek(0)
         book_data = temp_file.file.read()
-
+        
         return StreamingResponse(
             BytesIO(book_data),
             media_type="application/epub+zip",
