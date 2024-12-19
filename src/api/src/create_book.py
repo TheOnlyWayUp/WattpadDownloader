@@ -17,6 +17,8 @@ from pydantic_settings import BaseSettings
 from aiohttp import ClientResponseError
 from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend, RedisBackend
+from io import BytesIO
+from zipfile import ZipFile
 
 load_dotenv(override=True)
 
@@ -252,6 +254,26 @@ async def fetch_part_content(part_id: int, cookies: Optional[dict] = None) -> st
 
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def fetch_story_zip(story_id: int, cookies: Optional[dict] = None) -> BytesIO:
+    """Return a BytesIO stream of a .zip file containing each part's HTML content."""
+    with start_action(action_type="api_fetch_storyZip", story_id=story_id):
+        async with CachedSession(
+            headers=headers,
+            cookies=cookies,
+            cache=None if cookies else cache,
+        ) as session:
+            async with session.get(
+                f"https://www.wattpad.com/apiv2/?m=storytext&group_id={story_id}&output=zip"
+            ) as response:
+                response.raise_for_status()
+
+                bytes_object = await response.read()
+                bytes_stream = BytesIO(bytes_object)
+
+        return bytes_stream
+
+
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_cover(url: str) -> bytes:
     """Fetch cover image bytes."""
     with start_action(action_type="api_fetch_cover", url=url):
@@ -299,6 +321,12 @@ async def set_cover(book: EpubBook, data: Story) -> None:
     chapter.set_content('<img src="cover.jpg">')
 
 
+async def part_content(data, archive):
+    for cidx, part in enumerate(data["parts"]):
+        content = archive.read(str(part["id"])).decode("utf-8")
+        yield (cidx, part, content)
+
+
 async def add_chapters(
     book: EpubBook,
     data: Story,
@@ -307,8 +335,10 @@ async def add_chapters(
 ):
     chapters = []
 
-    for cidx, part in enumerate(data["parts"]):
-        content = await fetch_part_content(part["id"], cookies=cookies)
+    story_zip = await fetch_story_zip(data["id"], cookies)
+    archive = ZipFile(story_zip, "r")
+
+    async for cidx, part, content in part_content(data, archive):
         title = part["title"]
 
         # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
