@@ -321,6 +321,12 @@ async def set_cover(book: EpubBook, data: Story) -> None:
     chapter.set_content('<img src="cover.jpg">')
 
 
+async def part_content(data, archive):
+    for cidx, part in enumerate(data["parts"]):
+        content = archive.read(str(part["id"])).decode("utf-8")
+        yield (cidx, part, content)
+
+
 async def add_chapters(
     book: EpubBook,
     data: Story,
@@ -332,8 +338,7 @@ async def add_chapters(
     story_zip = await fetch_story_zip(data["id"], cookies)
     archive = ZipFile(story_zip, "r")
 
-    for cidx, part in enumerate(data["parts"]):
-        content = archive.read(str(part["id"])).decode("utf-8")
+    async for cidx, part, content in part_content(data, archive):
         title = part["title"]
 
         # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
