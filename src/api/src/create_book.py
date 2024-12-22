@@ -127,6 +127,7 @@ def smart_trim(text: str, max_length: int = 400) -> str:
 
 
 def generate_clean_part_html(part: Part, content: str) -> bs4.Tag:
+    """Rebuild HTML Structure for a Part."""
     chapter_title = part["title"]
     chapter_id = part["id"]
 
@@ -330,7 +331,7 @@ class PartNotFoundError(StoryNotFoundError): ...
 async def fetch_story_from_partId(
     part_id: int, cookies: Optional[dict] = None
 ) -> Tuple[int, Story]:
-    """Fetch Story ID from Part ID."""
+    """Fetch Story metadata from a Part ID."""
     with start_action(action_type="api_fetch_storyFromPartId"):
         async with CachedSession(
             headers=headers, cache=None if cookies else cache
@@ -353,7 +354,7 @@ async def fetch_story_from_partId(
 
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_story(story_id: int, cookies: Optional[dict] = None) -> Story:
-    """Fetch Story metadata using a Story ID."""
+    """Fetch Story metadata from a Story ID."""
     with start_action(action_type="api_fetch_story", story_id=story_id):
         async with CachedSession(
             headers=headers, cookies=cookies, cache=None if cookies else cache
@@ -378,7 +379,7 @@ async def fetch_story(story_id: int, cookies: Optional[dict] = None) -> Story:
 async def fetch_story_content_zip(
     story_id: int, cookies: Optional[dict] = None
 ) -> BytesIO:
-    """Return a BytesIO stream of a .zip file containing each part's HTML content."""
+    """BytesIO Stream of an Archive of Part Contents for a Story."""
     with start_action(action_type="api_fetch_storyZip", story_id=story_id):
         async with CachedSession(
             headers=headers,
@@ -390,8 +391,7 @@ async def fetch_story_content_zip(
             ) as response:
                 response.raise_for_status()
 
-                bytes_object = await response.read()
-                bytes_stream = BytesIO(bytes_object)
+                bytes_stream = BytesIO(await response.read())
 
         return bytes_stream
 
