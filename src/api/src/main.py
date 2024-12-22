@@ -4,6 +4,7 @@ from typing import Optional
 import asyncio
 from pathlib import Path
 from enum import Enum
+from zipfile import ZipFile
 from eliot import start_action
 from aiohttp import ClientResponseError
 from fastapi import FastAPI, Request
@@ -19,12 +20,12 @@ from create_book import (
     PDFGenerator,
     fetch_story,
     fetch_story_from_partId,
-    fetch_part_content,
+    fetch_story_content_zip,
     fetch_image,
     fetch_cookies,
     WattpadError,
     StoryNotFoundError,
-    clean_part_text,
+    generate_clean_part_html,
     slugify,
     logger,
 )
@@ -180,9 +181,13 @@ async def handle_download(
 
         logger.info(f"Retrieved story metadata and cover ({story_id=})")
 
+        story_zip = await fetch_story_content_zip(story_id, cookies)
+        archive = ZipFile(story_zip, "r")
+
         part_contents = [
-            f"<h1>{part['title']}</h1>"
-            + (clean_part_text(await fetch_part_content(part["id"], cookies=cookies)))
+            generate_clean_part_html(
+                part, archive.read(str(part["id"])).decode("utf-8")
+            )
             for part in metadata["parts"]
         ]
 
