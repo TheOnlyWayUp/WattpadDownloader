@@ -14,9 +14,12 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Install git, exiftool
+
+RUN add-apt-repository ppa:apt-fast/stable
+RUN apt install -y apt-fast
 RUN apt update
 
-RUN apt install -y git build-essential xorg libssl-dev libxrender-dev libpango-1.0-0 wget
+RUN apt-fast install -y git build-essential xorg libssl-dev libxrender-dev libpango-1.0-0 wget
 
 ENV EXIFTOOL_VERSION="13.06"
 RUN wget "https://exiftool.org/Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz"
