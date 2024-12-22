@@ -709,7 +709,7 @@ id="copyright-license-image">""".format(
         # # Cover and Copyright Page
         await self.generate_cover_and_copyright_html()
         await self.generate_about_author_chapter()
-        self.tree = BeautifulSoup(self.template)
+        self.tree = BeautifulSoup(self.template, "lxml")
 
         self.generate_toc()
         for part, content in zip(self.data["parts"], contents):

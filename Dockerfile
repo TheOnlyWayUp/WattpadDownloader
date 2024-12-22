@@ -15,6 +15,8 @@ WORKDIR /app
 
 # Install git, exiftool
 
+RUN apt update
+RUN apt install -y software-properties-common
 RUN add-apt-repository ppa:apt-fast/stable
 RUN apt install -y apt-fast
 RUN apt update
