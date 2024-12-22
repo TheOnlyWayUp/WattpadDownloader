@@ -13,14 +13,12 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install git, exiftool
+# Install apt-fast, git, exiftool
+
+COPY --from=nobodyxu/apt-fast:latest-debian-buster-slim /usr/local/ /usr/local/
 
 RUN apt update
-RUN apt install -y software-properties-common
-RUN add-apt-repository ppa:apt-fast/stable
-RUN apt install -y apt-fast
-RUN apt update
-
+RUN apt install -y aria2
 RUN apt-fast install -y git build-essential xorg libssl-dev libxrender-dev libpango-1.0-0 wget
 
 ENV EXIFTOOL_VERSION="13.06"
