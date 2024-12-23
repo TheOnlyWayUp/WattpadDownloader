@@ -16,7 +16,7 @@ WORKDIR /app
 # Install git, wkhtmltopdf (https://raw.githubusercontent.com/JazzCore/python-pdfkit/b7bf798b946fa5655f8e82f0d80dec6b6b13d414/ci/before-script.sh), exiftool
 RUN apt update
 
-RUN apt install -y git build-essential xorg libssl-dev libxrender-dev wget
+RUN apt install -y git build-essential xorg libssl-dev libxrender-dev wget libpango-1.0-0 libpangoft2-1.0-0
 
 # Thanks https://www.reddit.com/r/linux4noobs/comments/1adnavi/comment/kk2uq7u
 # RUN wget https://archive.debian.org/debian/pool/main/libj/libjpeg8/libjpeg8_8b-1_amd64.deb
