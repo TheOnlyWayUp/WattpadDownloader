@@ -116,8 +116,8 @@
           </p>
           <ul class="pt-4 list list-inside text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
-            <li>12/24 - ⚡ Super-fast Downloads!</li>
-            <li>12/24 - 📑 PDF Downloads!</li>
+            <!-- <li>12/24 - ⚡ Super-fast Downloads!</li>
+            <li>12/24 - 📑 PDF Downloads!</li> -->
             <li>12/24 - 📂 Improved Performance</li>
             <li>11/24 - 🔗 Paste Links!</li>
             <li>11/24 - 📨 Send to Kindle Support!</li>
@@ -214,7 +214,7 @@
                 on:click={() => (after_download_page = true)}>Download</a
               >
 
-              <label class="swap w-fit label mt-2">
+              <!-- <label class="swap w-fit label mt-2">
                 <input type="checkbox" bind:checked={download_as_pdf} />
                 <div class="swap-on">
                   Downloading as <span class=" underline text-bold">PDF</span> (Click)
@@ -222,7 +222,7 @@
                 <div class="swap-off">
                   Downloading as <span class=" underline text-bold">EPUB</span> (Click)
                 </div>
-              </label>
+              </label> -->
 
               <label class="cursor-pointer label">
                 <span class="label-text"

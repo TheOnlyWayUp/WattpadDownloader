@@ -77,7 +77,7 @@ app.add_middleware(RequestCancelledMiddleware)
 
 
 class DownloadFormat(Enum):
-    pdf = "pdf"
+    # pdf = "pdf"
     epub = "epub"
 
 
@@ -175,9 +175,9 @@ async def handle_download(
             case DownloadFormat.epub:
                 book = EPUBGenerator(metadata, cover_data)
                 media_type = "application/epub+zip"
-            case DownloadFormat.pdf:
-                book = PDFGenerator(metadata, cover_data)
-                media_type = "application/pdf"
+            # case DownloadFormat.pdf:
+            #     book = PDFGenerator(metadata, cover_data)
+            #     media_type = "application/pdf"
 
         logger.info(f"Retrieved story metadata and cover ({story_id=})")
 
