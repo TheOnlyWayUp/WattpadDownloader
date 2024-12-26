@@ -198,8 +198,13 @@ async def handle_download(
 
         book_buffer = book.dump()
 
+        async def iterfile():
+            while chunk := book_buffer.read(512 * 4):  # 4 kb/s
+                await asyncio.sleep(0.1)  # throttle download speed
+                yield chunk
+
         return StreamingResponse(
-            book_buffer,
+            iterfile(),
             media_type=media_type,
             headers={
                 "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"'  # Thanks https://stackoverflow.com/a/72729058
