@@ -675,6 +675,7 @@ id="copyright-license-image">""".format(
             else about_author.replace("{avatar}", "")
         )
 
+        self.template = about_author
         return about_author
 
     def generate_toc(self):
