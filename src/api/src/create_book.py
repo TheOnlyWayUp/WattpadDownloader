@@ -683,7 +683,7 @@ id="copyright-license-image">""".format(
         clean = BeautifulSoup(
             """
         <section id="contents" class="toc">
-        <h2>Table of Contents</h2>
+        <h1>Table of Contents</h1>
         <ul></ul>
         </section>
         """,
