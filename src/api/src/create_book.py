@@ -151,6 +151,7 @@ def generate_clean_part_html(part: Part, content: str) -> bs4.Tag:
         raise Exception()
 
     for child in html.find_all("p"):
+        current_paragraph = clean.new_tag("p")
         for p_child in list(child.children):
             if not p_child:
                 continue
@@ -161,37 +162,22 @@ def generate_clean_part_html(part: Part, content: str) -> bs4.Tag:
                     src = p_child["src"]
                     img_tag = clean.new_tag("img")
                     img_tag["src"] = src
-                    break_tag = clean.new_tag("br")
                     section.append(img_tag)
-                    section.append(break_tag)
-                elif p_child.name == "b":
-                    content = p_child.text
-                    p_tag = clean.new_tag("p")
-                    bold_tag = clean.new_tag("b")
-                    bold_content = clean.new_string(content)
-
-                    bold_tag.append(bold_content)
-                    p_tag.append(bold_tag)
-
-                    section.append(p_tag)
-
-                elif p_child.name == "i":
-                    content = p_child.text
-                    p_tag = clean.new_tag("p")
-                    italic_tag = clean.new_tag("i")
-                    italic_content = clean.new_string(content)
-
-                    italic_tag.append(italic_content)
-                    p_tag.append(italic_tag)
-
-                    section.append(p_tag)
-
+                    section.append(clean.new_tag("br"))
+                elif p_child.name in ["b", "i"]:
+                    styled_tag = clean.new_tag(p_child.name)
+                    styled_content = clean.new_string(p_child.text)
+                    styled_tag.append(styled_content)
+                    current_paragraph.append(styled_tag)
+                else:
+                    # Append any other tags as-is
+                    current_paragraph.append(p_child)
             elif isinstance(p_child, bs4.element.NavigableString):
-                content = p_child.text
-                p_tag = clean.new_tag("p")
-                p_content = clean.new_string(content)
-                p_tag.append(p_content)
-                section.append(p_tag)
+                content = clean.new_string(p_child)
+                current_paragraph.append(content)
+
+        if current_paragraph.contents:
+            section.append(current_paragraph)
 
         if not list(child.children):
             # Some p tags only contain brs, once brs are removed, they are empty and can be removed as well.
