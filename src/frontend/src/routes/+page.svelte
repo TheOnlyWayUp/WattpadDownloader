@@ -202,7 +202,6 @@
                 </label>
               {/if}
             </div>
-
             <div class="form-control mt-6">
               <a
                 class="btn rounded-l-none"
@@ -213,17 +212,22 @@
                 href={url}
                 on:click={() => (after_download_page = true)}>Download</a
               >
-
-              <label class="swap w-fit label mt-2">
-                <input type="checkbox" bind:checked={download_as_pdf} />
-                <div class="swap-on">
-                  Downloading as <span class=" underline text-bold">PDF</span> (Click)
-                </div>
-                <div class="swap-off">
-                  Downloading as <span class=" underline text-bold">EPUB</span> (Click)
-                </div>
-              </label>
-
+              <span></span>
+              <span style="display: flex; justify-content: space-between; align-items: center;">
+                <span>
+                  Downloading as 
+                  <span
+                    class="underline text-bold"
+                    style="display: inline-block; padding-top: 10px;"
+                  >
+                    {#if download_as_pdf}PDF{:else}EPUB{/if}
+                  </span>
+                </span>
+                <label class="switch">
+                  <input type="checkbox" bind:checked={download_as_pdf} />
+                  <span class="slider round"></span>
+                </label>
+              </span>                         
               <label class="cursor-pointer label">
                 <span class="label-text"
                   >Include Images (<strong>Slower Download</strong>)</span
