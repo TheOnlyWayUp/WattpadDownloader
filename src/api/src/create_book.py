@@ -133,7 +133,7 @@ def generate_clean_part_html(part: Part, content: str) -> bs4.Tag:
 
     clean = BeautifulSoup(
         f"""
-    <section id="section_{chapter_id}" class="chapitre">
+    <section id="section_{chapter_id}">
         <h1 id="{chapter_id}" class="chapter-title">{chapter_title}</h1>
     </section>
     """,
