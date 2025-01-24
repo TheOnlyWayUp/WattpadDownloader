@@ -164,9 +164,10 @@ def generate_clean_part_html(part: Part, content: str) -> bs4.Tag:
                     break_tag = clean.new_tag("br")
                     section.append(img_tag)
                     section.append(break_tag)
-                elif p_child.name == "b":
+                elif p_child.name in ["b", "strong"]:
                     content = p_child.text
                     p_tag = clean.new_tag("p")
+                    p_tag["style"] = "display:inline"
                     bold_tag = clean.new_tag("b")
                     bold_content = clean.new_string(content)
 
@@ -175,9 +176,10 @@ def generate_clean_part_html(part: Part, content: str) -> bs4.Tag:
 
                     section.append(p_tag)
 
-                elif p_child.name == "i":
+                elif p_child.name in ["i", "em"]:
                     content = p_child.text
                     p_tag = clean.new_tag("p")
+                    p_tag["style"] = "display:inline"
                     italic_tag = clean.new_tag("i")
                     italic_content = clean.new_string(content)
 
@@ -189,6 +191,7 @@ def generate_clean_part_html(part: Part, content: str) -> bs4.Tag:
             elif isinstance(p_child, bs4.element.NavigableString):
                 content = p_child.text
                 p_tag = clean.new_tag("p")
+                p_tag["style"] = "display:inline"
                 p_content = clean.new_string(content)
                 p_tag.append(p_content)
                 section.append(p_tag)
@@ -196,6 +199,10 @@ def generate_clean_part_html(part: Part, content: str) -> bs4.Tag:
         if not list(child.children):
             # Some p tags only contain brs, once brs are removed, they are empty and can be removed as well.
             child.decompose()
+
+        # Add an empty line between paragraphs
+        section.append(clean.new_tag("br"))
+        section.append(clean.new_tag("br"))
 
     return section
 
