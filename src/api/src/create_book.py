@@ -461,6 +461,7 @@ class EPUBGenerator:
 
         for cidx, (part, content) in enumerate(zip(self.data["parts"], contents)):
             title = part["title"]
+            title = re.sub(r'[\x00-\x1F\x7F]', '', title) # Remove control characters
 
             # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
             chapter = epub.EpubHtml(
