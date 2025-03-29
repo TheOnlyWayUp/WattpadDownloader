@@ -118,7 +118,7 @@
                   >high-speed PDF Downloads</span
                 >
               </p>
-              <a href="/donate" class="link">Donate now</a>
+              <a href="/donate" class="link" target="_blank">Donate now</a>
             </div>
           </div>
           <!-- <div role="alert" class="alert bg-cyan-300 mt-5">
