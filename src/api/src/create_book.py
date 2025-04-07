@@ -152,6 +152,13 @@ def generate_clean_part_html(part: Part, content: str) -> bs4.Tag:
 
     for child in html.find_all("p"):
         current_paragraph = clean.new_tag("p")
+
+        # Attempt to carry over paragraph styling
+        try:
+            current_paragraph["style"] = child["style"]
+        except:
+            current_paragraph["style"] = "text-align: left;"
+
         for p_child in list(child.children):
             if not p_child:
                 continue
