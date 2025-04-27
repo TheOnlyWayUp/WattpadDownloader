@@ -157,7 +157,7 @@
                   <p class=" text-red-500">
                     Refer to (<button
                       class="link font-semibold"
-                      onclick={storyURLTutorialModal.showModal}
+                      onclick={() => storyURLTutorialModal.showModal()}
                       data-umami-event="Part StoryURLTutorialModal Open"
                       >How to get a Story URL</button
                     >).
@@ -165,7 +165,7 @@
                 {:else}
                   <button
                     class="label-text link font-semibold"
-                    onclick={storyURLTutorialModal.showModal}
+                    onclick={() => storyURLTutorialModal.showModal()}
                     data-umami-event="StoryURLTutorialModal Open"
                     >How to get a Story URL</button
                   >
