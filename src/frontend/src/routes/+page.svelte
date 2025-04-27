@@ -1,80 +1,109 @@
 <script>
-  let download_images = false;
-  let is_paid_story = false;
-  let invalid_url = false;
-  let after_download_page = false;
-  let credentials = {
+  let downloadImages = $state(false);
+  let isPaidStory = $state(false);
+  let invalidUrl = $state(false);
+  let afterDownloadPage = $state(false);
+  let credentials = $state({
     username: "",
     password: "",
-  };
-  let download_id = "";
-  let mode = "";
-  let input_url = "";
+  });
+  let downloadId = $state("");
+  /** @type {"story" | "part" | ""} */
+  let mode = $state("");
+  let inputUrl = $state("");
 
-  let button_disabled = false;
-  $: button_disabled =
-    !input_url ||
-    (is_paid_story && !(credentials.username && credentials.password));
+  let buttonDisabled = $derived(
+    !inputUrl ||
+    (isPaidStory && !(credentials.username && credentials.password))
+  );
 
-  $: url =
-    `/download/` +
-    download_id +
-    `?om=1` +
-    (download_images ? "&download_images=true" : "") +
-    (is_paid_story
+  let url = $derived(
+    `/download/${downloadId}?om=1${downloadImages ? "&download_images=true" : ""}` +
+    (isPaidStory
       ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
       : "") +
-    `&mode=${mode}`;
+    (mode ? `&mode=${mode}` : "")
+  );
 
-  $: {
-    if (input_url.length) {
-      input_url = input_url.toLowerCase();
+  /** @type {HTMLDialogElement} */
+  let storyURLTutorialModal = $state.raw(undefined);
 
-      invalid_url = false;
+  /**
+   * @param {string} input
+   * @param {HTMLInputElement} [inputElement]
+   */
+  const setValid = (input, inputElement) => {
+    invalidUrl = false;
+    inputUrl = input;
+    downloadId = input;
+    if (inputElement) inputElement.value = input;
+  }
 
-      if (/^\d+$/.test(input_url)) {
-        // All numbers
-        download_id = input_url;
-        mode = "story";
-      } else if (input_url.includes("wattpad.com/")) {
-        // Is a string and contains contain wattpad.com/
+  /**
+   * @param {string} input
+   * @param {HTMLInputElement} inputElement
+   */
+  const setInvalid = (input, inputElement) => {
+    invalidUrl = true;
+    inputUrl = input;
+    downloadId = input;
+    inputElement.value = input;
+  }
 
-        if (input_url.includes("/story/")) {
-          // https://wattpad.com/story/237369078-wattpad-books-presents
-          input_url = input_url.split("-")[0].split("?")[0].split("/story/")[1]; // removes tracking fields and title
-          download_id = input_url;
-          mode = "story";
-        } else if (input_url.includes("/stories/")) {
-          // https://www.wattpad.com/api/v3/stories/237369078?fields=...
-          input_url = input_url.split("?")[0].split("/stories/")[1]; // removes params
-          download_id = input_url;
-          mode = "story";
-        } else {
-          // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
-          input_url = input_url.split("-")[0].split("?")[0].split("wattpad.com/")[1]; // removes tracking fields and title
-          download_id = input_url;
-          if (/^\d+$/.test(download_id)) {
-            // If "wattpad.com/{download_id}" contains only numbers
-            mode = "part";
-          } else {
-            invalid_url = true;
-            input_url = "";
-            download_id = "";
-          }
-        }
-      } else {
-        invalid_url = true;
-      }
+  /** @type {import("svelte/elements").FormEventHandler<HTMLInputElement>} */
+  const onInputUrl = (e) => {
+    let input = e.currentTarget.value.toLowerCase();
 
-      input_url = input_url.match(/\d+/g)?.join("") || "";
-      download_id = input_url;
-
-      // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
-      // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
-    } else {
-      invalid_url = false;
-      download_id = "";
+    if (!input) {
+      setValid("");
+      return;
     }
+
+    if (/^\d+$/.test(input)) {
+      // All numbers
+      mode = "story";
+      setValid(input, e.currentTarget);
+      return;
+    }
+
+    if (!input.includes("wattpad.com/")) {
+      setInvalid(
+        input.match(/\d+/g)?.join("") ?? "",
+        e.currentTarget,
+      );
+      return;
+    }
+
+    // Is a string and contains wattpad.com/
+
+    if (input.includes("/story/")) {
+      // https://wattpad.com/story/237369078-wattpad-books-presents
+      mode = "story";
+      setValid(
+        input.split("-", 1)[0].split("?", 1)[0].split("/story/")[1], // removes tracking fields and title
+        e.currentTarget,
+      );
+    } else if (input.includes("/stories/")) {
+      // https://www.wattpad.com/api/v3/stories/237369078?fields=...
+      mode = "story";
+      setValid(
+        input.split("?", 1)[0].split("/stories/")[1], // removes params
+        e.currentTarget,
+      );
+    } else {
+      // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
+      input = input.split("-", 1)[0].split("?", 1)[0].split("wattpad.com/")[1]; // removes tracking fields and title
+      if (/^\d+$/.test(input)) {
+        // If "wattpad.com/{downloadId}" contains only numbers
+        mode = "part";
+        setValid(input, e.currentTarget);
+      } else {
+        setInvalid("", e.currentTarget);
+      }
+    }
+
+    // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
+    // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
   }
 </script>
 
@@ -83,7 +112,7 @@
     <div
       class="hero-content flex-col lg:flex-row-reverse bg-base-100/50 p-16 rounded shadow-sm"
     >
-      {#if !after_download_page}
+      {#if !afterDownloadPage}
         <div class="text-center lg:text-left lg:p-10">
           <h1
             class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
@@ -119,17 +148,16 @@
                 type="text"
                 placeholder="Story URL"
                 class="input input-bordered"
-                class:input-warning={invalid_url}
-                bind:value={input_url}
+                oninput={onInputUrl}
                 required
                 name="input_url"
               />
               <label class="label" for="input_url">
-                {#if invalid_url}
+                {#if invalidUrl}
                   <p class=" text-red-500">
                     Refer to (<button
                       class="link font-semibold"
-                      onclick="StoryURLTutorialModal.showModal()"
+                      onclick={storyURLTutorialModal.showModal}
                       data-umami-event="Part StoryURLTutorialModal Open"
                       >How to get a Story URL</button
                     >).
@@ -137,7 +165,7 @@
                 {:else}
                   <button
                     class="label-text link font-semibold"
-                    onclick="StoryURLTutorialModal.showModal()"
+                    onclick={storyURLTutorialModal.showModal}
                     data-umami-event="StoryURLTutorialModal Open"
                     >How to get a Story URL</button
                   >
@@ -150,10 +178,10 @@
                 <input
                   type="checkbox"
                   class="checkbox checkbox-warning shadow-md"
-                  bind:checked={is_paid_story}
+                  bind:checked={isPaidStory}
                 />
               </label>
-              {#if is_paid_story}
+              {#if isPaidStory}
                 <label class="input input-bordered flex items-center gap-2">
                   Username
                   <input
@@ -182,10 +210,10 @@
             <div class="form-control mt-6">
               <a
                 class="btn btn-primary rounded-l-none"
-                class:btn-disabled={button_disabled}
+                class:btn-disabled={buttonDisabled}
                 data-umami-event="Download"
                 href={url}
-                on:click={() => (after_download_page = true)}>Download</a
+                onclick={() => (afterDownloadPage = true)}>Download</a
               >
 
               <label class="cursor-pointer label">
@@ -195,7 +223,7 @@
                 <input
                   type="checkbox"
                   class="checkbox checkbox-warning shadow-md"
-                  bind:checked={download_images}
+                  bind:checked={downloadImages}
                 />
               </label>
             </div>
@@ -234,9 +262,9 @@
             </p>
           </div>
           <button
-            on:click={() => {
-              after_download_page = false;
-              input_url = "";
+            onclick={() => {
+              afterDownloadPage = false;
+              inputUrl = "";
             }}
             class="btn btn-outline btn-lg mt-10">Download More</button
           >
@@ -248,7 +276,7 @@
 
 <!-- Open the modal using ID.showModal() method -->
 
-<dialog id="StoryURLTutorialModal" class="modal">
+<dialog id="StoryURLTutorialModal" class="modal" bind:this={storyURLTutorialModal}>
   <div class="modal-box">
     <form method="dialog">
       <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"

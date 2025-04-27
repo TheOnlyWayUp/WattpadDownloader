@@ -4,6 +4,7 @@ venv
 data
 *ipynb
 build
+.idea
 .vscode
 .venv
 .env
