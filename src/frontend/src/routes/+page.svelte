@@ -15,19 +15,19 @@
 
   let buttonDisabled = $derived(
     !inputUrl ||
-    (isPaidStory && !(credentials.username && credentials.password))
+      (isPaidStory && !(credentials.username && credentials.password)),
   );
 
   let url = $derived(
     `/download/` +
-    downloadId +
-    `?om=1` +
-    (downloadImages ? "&download_images=true" : "") +
-    (isPaidStory
-      ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
-      : "") +
-    `&mode=${mode}` +
-    (downloadAsPdf ? "&format=pdf" : "&format=epub")
+      downloadId +
+      `?om=1` +
+      (downloadImages ? "&download_images=true" : "") +
+      (isPaidStory
+        ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
+        : "") +
+      `&mode=${mode}` +
+      (downloadAsPdf ? "&format=pdf" : "&format=epub"),
   );
 
   /** @type {HTMLDialogElement} */
@@ -72,10 +72,7 @@
     }
 
     if (!input.includes("wattpad.com/")) {
-      setInvalid(
-        input.match(/\d+/g)?.join("") ?? "",
-        e.currentTarget,
-      );
+      setInvalid(input.match(/\d+/g)?.join("") ?? "", e.currentTarget);
       return;
     }
 
@@ -109,7 +106,7 @@
 
     // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
     // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
-  }
+  };
 </script>
 
 <div>

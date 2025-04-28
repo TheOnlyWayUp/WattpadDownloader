@@ -12,9 +12,7 @@ const config = {
   plugins: [typography, daisyui],
 
   daisyui: {
-    themes: [
-      "bumblebee"
-    ],
+    themes: ["bumblebee"],
   },
 };
 
