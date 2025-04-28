@@ -120,8 +120,6 @@
             class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
             >Wattpad Downloader</h1
           >
-            Wattpad Downloader
-          </h1>
           <div
             role="alert"
             class="alert bg-green-200 mt-10 break-words max-w-md"
@@ -164,15 +162,11 @@
             </svg>
             <span class="text-lg">Please Donate</span>
           </div> -->
-          <p class="pt-6 text-lg max-w-md">
-            Download your favourite books with a single click. Have a great new
-            year!
-          </p>
-          <ul class="pt-4 list list-inside text-xl">
           <p class="max-w-md pt-6 text-lg"
             >Download your favourite books with a single click. Have a great new
             year!</p
           >
+          <ul class="list list-inside pt-4 text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
             <!-- <li>12/24 - ⚡ Super-fast Downloads!</li>
             <li>12/24 - 📑 PDF Downloads!</li> -->
