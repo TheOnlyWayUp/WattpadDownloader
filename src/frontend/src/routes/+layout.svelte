@@ -1,5 +1,12 @@
 <script>
   import "../app.pcss";
+  /**
+   * @typedef {Object} Props
+   * @property {import('svelte').Snippet} [children]
+   */
+
+  /** @type {Props} */
+  let { children } = $props();
 </script>
 
 <svelte:head>
@@ -10,7 +17,7 @@
   </style>
 </svelte:head>
 
-<slot />
+{@render children?.()}
 
 <footer
   class="footer footer-center p-4 bg-base-300 text-base-content bottom-0 fixed"
