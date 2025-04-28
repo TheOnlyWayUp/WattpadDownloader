@@ -121,8 +121,9 @@
         <div class="text-center lg:text-left lg:p-10">
           <h1
             class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
-            >Wattpad Downloader</h1
           >
+            Wattpad Downloader
+          </h1>
           <div
             role="alert"
             class="alert bg-green-200 mt-10 break-words max-w-md"
@@ -266,7 +267,7 @@
                 class:btn-disabled={buttonDisabled}
                 data-umami-event="Download"
                 href={url}
-                on:click={() => (afterDownloadPage = true)}>Download</a
+                onclick={() => (afterDownloadPage = true)}>Download</a
               >
 
               <!-- <label class="swap w-fit label mt-2">
@@ -326,7 +327,7 @@
               >Buy me a Coffee! 🍵</a
             >
             <button
-              on:click={() => {
+              onclick={() => {
                 afterDownloadPage = false;
                 inputUrl = "";
               }}
