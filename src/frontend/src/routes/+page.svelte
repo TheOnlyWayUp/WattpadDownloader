@@ -37,7 +37,7 @@
    * @param {string} input
    * @param {HTMLInputElement} [inputElement]
    */
-  const setValid = (input, inputElement) => {
+  const setInputAsValid = (input, inputElement) => {
     invalidUrl = false;
     inputUrl = input;
     downloadId = input;
@@ -48,7 +48,7 @@
    * @param {string} input
    * @param {HTMLInputElement} inputElement
    */
-  const setInvalid = (input, inputElement) => {
+  const setInputAsInvalid = (input, inputElement) => {
     invalidUrl = true;
     inputUrl = input;
     downloadId = input;
@@ -60,19 +60,19 @@
     let input = e.currentTarget.value.toLowerCase();
 
     if (!input) {
-      setValid("");
+      setInputAsValid("");
       return;
     }
 
     if (/^\d+$/.test(input)) {
       // All numbers
       mode = "story";
-      setValid(input, e.currentTarget);
+      setInputAsValid(input, e.currentTarget);
       return;
     }
 
     if (!input.includes("wattpad.com/")) {
-      setInvalid(input.match(/\d+/g)?.join("") ?? "", e.currentTarget);
+      setInputAsInvalid(input.match(/\d+/g)?.join("") ?? "", e.currentTarget);
       return;
     }
 
@@ -81,14 +81,14 @@
     if (input.includes("/story/")) {
       // https://wattpad.com/story/237369078-wattpad-books-presents
       mode = "story";
-      setValid(
+      setInputAsValid(
         input.split("-", 1)[0].split("?", 1)[0].split("/story/")[1], // removes tracking fields and title
         e.currentTarget,
       );
     } else if (input.includes("/stories/")) {
       // https://www.wattpad.com/api/v3/stories/237369078?fields=...
       mode = "story";
-      setValid(
+      setInputAsValid(
         input.split("?", 1)[0].split("/stories/")[1], // removes params
         e.currentTarget,
       );
@@ -98,9 +98,9 @@
       if (/^\d+$/.test(input)) {
         // If "wattpad.com/{downloadId}" contains only numbers
         mode = "part";
-        setValid(input, e.currentTarget);
+        setInputAsValid(input, e.currentTarget);
       } else {
-        setInvalid("", e.currentTarget);
+        setInputAsInvalid("", e.currentTarget);
       }
     }
 
