@@ -31,7 +31,7 @@
   );
 
   /** @type {HTMLDialogElement} */
-  let storyURLTutorialModal = $state.raw(undefined);
+  let storyURLTutorialModal;
 
   /**
    * @param {string} input
