@@ -112,17 +112,17 @@
 <div>
   <div class="hero min-h-screen">
     <div
-      class="hero-content flex-col lg:flex-row-reverse bg-base-100/50 lg:p-16 py-32 rounded shadow-sm"
+      class="hero-content flex-col rounded bg-base-100/50 py-32 shadow-sm lg:flex-row-reverse lg:p-16"
     >
       {#if !afterDownloadPage}
-        <div class="text-center lg:text-left lg:p-10">
+        <div class="text-center lg:p-10 lg:text-left">
           <h1
-            class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
+            class="bg-gradient-to-r from-red-700 via-yellow-600 to-pink-600 bg-clip-text text-5xl font-extrabold text-transparent"
             >Wattpad Downloader</h1
           >
           <div
             role="alert"
-            class="alert bg-green-200 mt-10 break-words max-w-md"
+            class="alert mt-10 max-w-md break-words bg-green-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -187,7 +187,7 @@
             <li>06/24 - 🖼️ Image Downloading!</li>
           </ul>
         </div>
-        <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
+        <div class="card w-full max-w-sm shrink-0 bg-base-100 shadow-2xl">
           <form class="card-body">
             <div class="form-control">
               <input
@@ -211,7 +211,7 @@
                   </p>
                 {:else}
                   <button
-                    class="label-text link font-semibold"
+                    class="link label-text font-semibold"
                     onclick={() => storyURLTutorialModal.showModal()}
                     data-umami-event="StoryURLTutorialModal Open"
                     >How to get a Story URL</button
@@ -219,13 +219,13 @@
                 {/if}
               </label>
 
-              <label class="cursor-pointer label">
+              <label class="label cursor-pointer">
                 <span class="label-text"
                   >This is a Paid Story, and I've purchased it</span
                 >
                 <input
                   type="checkbox"
-                  class="checkbox checkbox-warning shadow-md"
+                  class="checkbox-warning checkbox shadow-md"
                   bind:checked={isPaidStory}
                 />
               </label>
@@ -276,13 +276,13 @@
                 </div>
               </label> -->
 
-              <label class="cursor-pointer label">
+              <label class="label cursor-pointer">
                 <span class="label-text"
                   >Include Images (<strong>Slower Download</strong>)</span
                 >
                 <input
                   type="checkbox"
-                  class="checkbox checkbox-warning shadow-md"
+                  class="checkbox-warning checkbox shadow-md"
                   bind:checked={downloadImages}
                 />
               </label>
@@ -290,14 +290,14 @@
           </form>
         </div>
       {:else}
-        <div class="text-center max-w-4xl">
-          <h1 class="font-bold text-3xl">
+        <div class="max-w-4xl text-center">
+          <h1 class="text-3xl font-bold">
             Your download has <span
-              class="text-transparent bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
+              class="bg-gradient-to-r from-red-700 via-yellow-600 to-pink-600 bg-clip-text text-transparent"
               >Started</span
             >
           </h1>
-          <div class="py-4 space-y-2">
+          <div class="space-y-2 py-4">
             <p class="text-2xl">
               If you found this site useful, please consider <a
                 href="https://github.com/TheOnlyWayUp/WattpadDownloader"
@@ -306,7 +306,7 @@
                 data-umami-event="Star">starring the project</a
               > to support WattpadDownloader.
             </p>
-            <p class="text-lg pt-2">
+            <p class="pt-2 text-lg">
               You can also join us on <a
                 href="https://discord.gg/P9RHC4KCwd"
                 target="_blank"
@@ -315,11 +315,11 @@
               >, where we release features early and discuss updates.
             </p>
           </div>
-          <div class="grid justify-center grid-rows-2 gap-y-10">
+          <div class="grid grid-rows-2 justify-center gap-y-10">
             <a
               href="/donate"
               target="_blank"
-              class="btn bg-cyan-200 btn-lg mt-10 hover:bg-green-200"
+              class="btn btn-lg mt-10 bg-cyan-200 hover:bg-green-200"
               >Buy me a Coffee! 🍵</a
             >
             <button
@@ -339,24 +339,24 @@
 <dialog class="modal" bind:this={storyURLTutorialModal}>
   <div class="modal-box">
     <form method="dialog">
-      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+      <button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2"
         >✕</button
       >
     </form>
-    <h3 class="font-bold text-lg">Finding the Story URL</h3>
-    <ol class="list list-disc list-inside py-4 space-y-4">
+    <h3 class="text-lg font-bold">Finding the Story URL</h3>
+    <ol class="list list-inside list-disc space-y-4 py-4">
       <li>
         Copy the URL from the Website, or hit share and copy the URL on the App.
       </li>
       <li>
         For example,
-        <span class="font-mono bg-slate-100 p-1"
-          >wattpad.com/<span class="bg-amber-200 rounded-sm">story</span
+        <span class="bg-slate-100 p-1 font-mono"
+          >wattpad.com/<span class="rounded-sm bg-amber-200">story</span
           >/237369078-wattpad-books-presents</span
         >.
       </li>
       <li>
-        <span class="font-mono bg-slate-100 p-1"
+        <span class="bg-slate-100 p-1 font-mono"
           >https://www.wattpad.com/939103774-given</span
         > is okay too.
       </li>

@@ -20,10 +20,10 @@
 {@render children?.()}
 
 <footer
-  class="footer footer-center p-4 bg-base-300 text-base-content bottom-0 fixed"
+  class="footer footer-center fixed bottom-0 bg-base-300 p-4 text-base-content"
 >
   <aside>
-    <div class="flex flex-row max-w-lg w-full">
+    <div class="flex w-full max-w-lg flex-row">
       <a
         href="/donate"
         target="_blank"

@@ -3,8 +3,8 @@
   "endOfLine": "lf",
   "semi": true,
   "tabWidth": 2,
-  "plugins": ["prettier-plugin-svelte"],
   "htmlWhitespaceSensitivity": "strict",
+  "plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
   "overrides": [
     {
       "files": "*.svelte",
@@ -12,5 +12,7 @@
         "parser": "svelte"
       }
     }
-  ]
+  ],
+  "tailwindStylesheet": "./src/app.pcss",
+  "tailwindConfig": "./tailwind.config.cjs"
 }
