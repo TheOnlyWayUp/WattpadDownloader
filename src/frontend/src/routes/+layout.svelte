@@ -1,5 +1,5 @@
 <script>
-  import "../app.pcss";
+  import "../app.css";
   /**
    * @typedef {Object} Props
    * @property {import('svelte').Snippet} [children]
