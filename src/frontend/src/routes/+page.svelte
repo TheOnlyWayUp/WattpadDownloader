@@ -33,31 +33,23 @@
   /** @type {HTMLDialogElement} */
   let storyURLTutorialModal;
 
-  /**
-   * @param {string} input
-   * @param {HTMLInputElement} [inputElement]
-   */
-  const setInputAsValid = (input, inputElement) => {
+  /** @param {string} input */
+  const setInputAsValid = (input) => {
     invalidUrl = false;
     inputUrl = input;
     downloadId = input;
-    if (inputElement) inputElement.value = input;
   };
 
-  /**
-   * @param {string} input
-   * @param {HTMLInputElement} inputElement
-   */
-  const setInputAsInvalid = (input, inputElement) => {
+  /** @param {string} input */
+  const setInputAsInvalid = (input) => {
     invalidUrl = true;
     inputUrl = input;
     downloadId = input;
-    inputElement.value = input;
   };
 
-  /** @type {import("svelte/elements").FormEventHandler<HTMLInputElement>} */
-  const onInputUrl = (e) => {
-    let input = e.currentTarget.value.toLowerCase();
+  /** @param {string} input */
+  const setInputUrl = (input) => {
+    input = input.toLowerCase();
 
     if (!input) {
       setInputAsValid("");
@@ -67,12 +59,12 @@
     if (/^\d+$/.test(input)) {
       // All numbers
       mode = "story";
-      setInputAsValid(input, e.currentTarget);
+      setInputAsValid(input);
       return;
     }
 
     if (!input.includes("wattpad.com/")) {
-      setInputAsInvalid(input.match(/\d+/g)?.join("") ?? "", e.currentTarget);
+      setInputAsInvalid(input.match(/\d+/g)?.join("") ?? "");
       return;
     }
 
@@ -83,14 +75,12 @@
       mode = "story";
       setInputAsValid(
         input.split("-", 1)[0].split("?", 1)[0].split("/story/")[1], // removes tracking fields and title
-        e.currentTarget,
       );
     } else if (input.includes("/stories/")) {
       // https://www.wattpad.com/api/v3/stories/237369078?fields=...
       mode = "story";
       setInputAsValid(
         input.split("?", 1)[0].split("/stories/")[1], // removes params
-        e.currentTarget,
       );
     } else {
       // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
@@ -98,9 +88,9 @@
       if (/^\d+$/.test(input)) {
         // If "wattpad.com/{downloadId}" contains only numbers
         mode = "part";
-        setInputAsValid(input, e.currentTarget);
+        setInputAsValid(input);
       } else {
-        setInputAsInvalid("", e.currentTarget);
+        setInputAsInvalid("");
       }
     }
 
@@ -195,7 +185,7 @@
                 placeholder="Story URL"
                 class="input input-bordered"
                 class:input-warning={invalidUrl}
-                oninput={onInputUrl}
+                bind:value={() => inputUrl, setInputUrl}
                 required
                 name="input_url"
               />
