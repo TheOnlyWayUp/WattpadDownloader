@@ -6,7 +6,7 @@
   let afterDownloadPage = $state(false);
   let credentials = $state({
     username: "",
-    password: "",
+    password: ""
   });
   let downloadId = $state("");
   /** @type {"story" | "part" | ""} */
@@ -14,8 +14,7 @@
   let inputUrl = $state("");
 
   let buttonDisabled = $derived(
-    !inputUrl ||
-      (isPaidStory && !(credentials.username && credentials.password)),
+    !inputUrl || (isPaidStory && !(credentials.username && credentials.password))
   );
 
   let url = $derived(
@@ -27,7 +26,7 @@
         ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
         : "") +
       `&mode=${mode}` +
-      (downloadAsPdf ? "&format=pdf" : "&format=epub"),
+      (downloadAsPdf ? "&format=pdf" : "&format=epub")
   );
 
   /** @type {HTMLDialogElement} */
@@ -74,13 +73,13 @@
       // https://wattpad.com/story/237369078-wattpad-books-presents
       mode = "story";
       setInputAsValid(
-        input.split("-", 1)[0].split("?", 1)[0].split("/story/")[1], // removes tracking fields and title
+        input.split("-", 1)[0].split("?", 1)[0].split("/story/")[1] // removes tracking fields and title
       );
     } else if (input.includes("/stories/")) {
       // https://www.wattpad.com/api/v3/stories/237369078?fields=...
       mode = "story";
       setInputAsValid(
-        input.split("?", 1)[0].split("/stories/")[1], // removes params
+        input.split("?", 1)[0].split("/stories/")[1] // removes params
       );
     } else {
       // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
@@ -102,18 +101,16 @@
 <div>
   <div class="hero min-h-screen">
     <div
-      class="hero-content flex-col rounded bg-base-100/50 py-32 shadow-sm lg:flex-row-reverse lg:p-16"
+      class="hero-content bg-base-100/50 flex-col rounded py-32 shadow-sm lg:flex-row-reverse lg:p-16"
     >
       {#if !afterDownloadPage}
         <div class="text-center lg:p-10 lg:text-left">
           <h1
             class="bg-gradient-to-r from-red-700 via-yellow-600 to-pink-600 bg-clip-text text-5xl font-extrabold text-transparent"
-            >Wattpad Downloader</h1
           >
-          <div
-            role="alert"
-            class="alert mt-10 max-w-md break-words bg-green-200"
-          >
+            WP Downloader
+          </h1>
+          <div role="alert" class="alert mt-10 max-w-md break-words bg-green-200">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -129,11 +126,11 @@
             </svg>
             <div>
               <p>
-                Donators get access to <span class="font-semibold"
-                  >high-speed PDF Downloads</span
-                >
+                Donators get access to <span class="font-semibold">high-speed PDF Downloads</span>
               </p>
-              <a href="https://buymeacoffee.com/theonlywayup" class="link" target="_blank">Donate now</a>
+              <a href="https://buymeacoffee.com/theonlywayup" class="link" target="_blank"
+                >Donate now</a
+              >
             </div>
           </div>
           <!-- <div role="alert" class="alert bg-cyan-300 mt-5">
@@ -152,10 +149,9 @@
             </svg>
             <span class="text-lg">Please Donate</span>
           </div> -->
-          <p class="max-w-md pt-6 text-lg"
-            >Download your favourite books with a single click. Have a great new
-            year!</p
-          >
+          <p class="max-w-md pt-6 text-lg">
+            Download your favourite books with a single click. Have a great new year!
+          </p>
           <ul class="list list-inside pt-4 text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
             <!-- <li>12/24 - ⚡ Super-fast Downloads!</li>
@@ -177,7 +173,7 @@
             <li>06/24 - 🖼️ Image Downloading!</li>
           </ul>
         </div>
-        <div class="card w-full max-w-sm shrink-0 bg-base-100 shadow-2xl">
+        <div class="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
           <form class="card-body">
             <div class="form-control">
               <input
@@ -203,16 +199,13 @@
                   <button
                     class="link label-text font-semibold"
                     onclick={() => storyURLTutorialModal.showModal()}
-                    data-umami-event="StoryURLTutorialModal Open"
-                    >How to get a Story URL</button
+                    data-umami-event="StoryURLTutorialModal Open">How to get a Story URL</button
                   >
                 {/if}
               </label>
 
               <label class="label cursor-pointer">
-                <span class="label-text"
-                  >This is a Paid Story, and I've purchased it</span
-                >
+                <span class="label-text">This is a Paid Story, and I've purchased it</span>
                 <input
                   type="checkbox"
                   class="checkbox-warning checkbox shadow-md"
@@ -267,9 +260,7 @@
               </label> -->
 
               <label class="label cursor-pointer">
-                <span class="label-text"
-                  >Include Images (<strong>Slower Download</strong>)</span
-                >
+                <span class="label-text">Include Images (<strong>Slower Download</strong>)</span>
                 <input
                   type="checkbox"
                   class="checkbox-warning checkbox shadow-md"
@@ -294,7 +285,7 @@
                 target="_blank"
                 class="link"
                 data-umami-event="Star">starring the project</a
-              > to support WattpadDownloader.
+              > to support WPDownloader.
             </p>
             <p class="pt-2 text-lg">
               You can also join us on <a
@@ -309,8 +300,7 @@
             <a
               href="https://buymeacoffee.com/theonlywayup"
               target="_blank"
-              class="btn btn-lg mt-10 bg-cyan-200 hover:bg-green-200"
-              >Buy me a Coffee! 🍵</a
+              class="btn btn-lg mt-10 bg-cyan-200 hover:bg-green-200">Buy me a Coffee! 🍵</a
             >
             <button
               onclick={() => {
@@ -329,15 +319,11 @@
 <dialog class="modal" bind:this={storyURLTutorialModal}>
   <div class="modal-box">
     <form method="dialog">
-      <button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2"
-        >✕</button
-      >
+      <button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2">✕</button>
     </form>
     <h3 class="text-lg font-bold">Finding the Story URL</h3>
     <ol class="list list-inside list-disc space-y-4 py-4">
-      <li>
-        Copy the URL from the Website, or hit share and copy the URL on the App.
-      </li>
+      <li>Copy the URL from the Website, or hit share and copy the URL on the App.</li>
       <li>
         For example,
         <span class="bg-slate-100 p-1 font-mono"
@@ -346,9 +332,8 @@
         >.
       </li>
       <li>
-        <span class="bg-slate-100 p-1 font-mono"
-          >https://www.wattpad.com/939103774-given</span
-        > is okay too.
+        <span class="bg-slate-100 p-1 font-mono">https://www.wattpad.com/939103774-given</span> is okay
+        too.
       </li>
       <li>Paste the URL and hit Download!</li>
     </ol>
