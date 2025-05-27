@@ -322,7 +322,7 @@
     <form method="dialog">
       <button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2">✕</button>
     </form>
-    <h3 class="text-lg font-bold">Finding the Story URL</h3>
+    <h3 class="text-lg font-bold">How to get a Story URL</h3>
     <ol class="list list-inside list-disc space-y-4 py-4">
       <li>Copy the URL from the Website, or hit share and copy the URL on the App.</li>
       <li>
