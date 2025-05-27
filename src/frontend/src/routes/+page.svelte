@@ -133,7 +133,7 @@
                   >high-speed PDF Downloads</span
                 >
               </p>
-              <a href="/donate" class="link" target="_blank">Donate now</a>
+              <a href="https://buymeacoffee.com/theonlywayup" class="link" target="_blank">Donate now</a>
             </div>
           </div>
           <!-- <div role="alert" class="alert bg-cyan-300 mt-5">
@@ -307,7 +307,7 @@
           </div>
           <div class="grid grid-rows-2 justify-center gap-y-10">
             <a
-              href="/donate"
+              href="https://buymeacoffee.com/theonlywayup"
               target="_blank"
               class="btn btn-lg mt-10 bg-cyan-200 hover:bg-green-200"
               >Buy me a Coffee! 🍵</a

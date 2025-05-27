@@ -17,7 +17,7 @@
   </style>
 </svelte:head>
 
-{@render children?.()}
+{@render children()}
 
 <footer
   class="footer footer-center fixed bottom-0 bg-base-300 p-4 text-base-content"
@@ -25,7 +25,7 @@
   <aside>
     <div class="flex w-full max-w-lg flex-row">
       <a
-        href="/donate"
+        href="https://buymeacoffee.com/theonlywayup"
         target="_blank"
         class="link"
         data-umami-event="Footer Donate">Buy me a Coffee!</a
