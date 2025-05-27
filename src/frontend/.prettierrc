@@ -1,0 +1,18 @@
+{
+  "trailingComma": "all",
+  "endOfLine": "lf",
+  "semi": true,
+  "tabWidth": 2,
+  "htmlWhitespaceSensitivity": "strict",
+  "plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
+  "overrides": [
+    {
+      "files": "*.svelte",
+      "options": {
+        "parser": "svelte"
+      }
+    }
+  ],
+  "tailwindStylesheet": "./src/app.css",
+  "tailwindConfig": "./tailwind.config.js"
+}
