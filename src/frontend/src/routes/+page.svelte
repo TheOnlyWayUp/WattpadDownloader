@@ -1,101 +1,162 @@
 <script>
-  let download_images = false;
-  let is_paid_story = false;
-  let invalid_url = false;
-  let after_download_page = false;
-  let credentials = {
+  let downloadImages = $state(false);
+  let downloadAsPdf = $state(false); // 0 = epub, 1 = pdf
+  let isPaidStory = $state(false);
+  let invalidUrl = $state(false);
+  let afterDownloadPage = $state(false);
+  let credentials = $state({
     username: "",
-    password: "",
-  };
-  let download_id = "";
-  let mode = "";
-  let input_url = "";
+    password: ""
+  });
+  let downloadId = $state("");
+  /** @type {"story" | "part" | ""} */
+  let mode = $state("");
+  let inputUrl = $state("");
 
-  let button_disabled = false;
-  $: button_disabled =
-    !input_url ||
-    (is_paid_story && !(credentials.username && credentials.password));
+  let buttonDisabled = $derived(
+    !inputUrl || (isPaidStory && !(credentials.username && credentials.password))
+  );
 
-  $: url =
+  let url = $derived(
     `/download/` +
-    download_id +
-    `?om=1` +
-    (download_images ? "&download_images=true" : "") +
-    (is_paid_story
-      ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
-      : "") +
-    `&mode=${mode}`;
+      downloadId +
+      `?om=1` +
+      (downloadImages ? "&download_images=true" : "") +
+      (isPaidStory
+        ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
+        : "") +
+      `&mode=${mode}` +
+      (downloadAsPdf ? "&format=pdf" : "&format=epub")
+  );
 
-  $: {
-    if (input_url.length) {
-      input_url = input_url.toLowerCase();
+  /** @type {HTMLDialogElement} */
+  let storyURLTutorialModal;
 
-      invalid_url = false;
+  /** @param {string} input */
+  const setInputAsValid = (input) => {
+    invalidUrl = false;
+    inputUrl = input;
+    downloadId = input;
+  };
 
-      if (/^\d+$/.test(input_url)) {
-        // All numbers
-        download_id = input_url;
-        mode = "story";
-      } else if (input_url.includes("wattpad.com/")) {
-        // Is a string and contains contain wattpad.com/
+  /** @param {string} input */
+  const setInputAsInvalid = (input) => {
+    invalidUrl = true;
+    inputUrl = input;
+    downloadId = input;
+  };
 
-        if (input_url.includes("/story/")) {
-          // https://wattpad.com/story/237369078-wattpad-books-presents
-          input_url = input_url.split("-")[0].split("?")[0].split("/story/")[1]; // removes tracking fields and title
-          download_id = input_url;
-          mode = "story";
-        } else if (input_url.includes("/stories/")) {
-          // https://www.wattpad.com/api/v3/stories/237369078?fields=...
-          input_url = input_url.split("?")[0].split("/stories/")[1]; // removes params
-          download_id = input_url;
-          mode = "story";
-        } else {
-          // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
-          input_url = input_url.split("-")[0].split("?")[0].split("wattpad.com/")[1]; // removes tracking fields and title
-          download_id = input_url;
-          if (/^\d+$/.test(download_id)) {
-            // If "wattpad.com/{download_id}" contains only numbers
-            mode = "part";
-          } else {
-            invalid_url = true;
-            input_url = "";
-            download_id = "";
-          }
-        }
-      } else {
-        invalid_url = true;
-      }
+  /** @param {string} input */
+  const setInputUrl = (input) => {
+    input = input.toLowerCase();
 
-      input_url = input_url.match(/\d+/g)?.join("") || "";
-      download_id = input_url;
-
-      // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
-      // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
-    } else {
-      invalid_url = false;
-      download_id = "";
+    if (!input) {
+      setInputAsValid("");
+      return;
     }
-  }
+
+    if (/^\d+$/.test(input)) {
+      // All numbers
+      mode = "story";
+      setInputAsValid(input);
+      return;
+    }
+
+    if (!input.includes("wattpad.com/")) {
+      setInputAsInvalid(input.match(/\d+/g)?.join("") ?? "");
+      return;
+    }
+
+    // Is a string and contains wattpad.com/
+
+    if (input.includes("/story/")) {
+      // https://wattpad.com/story/237369078-wattpad-books-presents
+      mode = "story";
+      setInputAsValid(
+        input.split("-", 1)[0].split("?", 1)[0].split("/story/")[1] // removes tracking fields and title
+      );
+    } else if (input.includes("/stories/")) {
+      // https://www.wattpad.com/api/v3/stories/237369078?fields=...
+      mode = "story";
+      setInputAsValid(
+        input.split("?", 1)[0].split("/stories/")[1] // removes params
+      );
+    } else {
+      // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
+      input = input.split("-", 1)[0].split("?", 1)[0].split("wattpad.com/")[1]; // removes tracking fields and title
+      if (/^\d+$/.test(input)) {
+        // If "wattpad.com/{downloadId}" contains only numbers
+        mode = "part";
+        setInputAsValid(input);
+      } else {
+        setInputAsInvalid("");
+      }
+    }
+
+    // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
+    // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
+  };
 </script>
 
 <div>
   <div class="hero min-h-screen">
     <div
-      class="hero-content flex-col lg:flex-row-reverse bg-base-100/50 p-16 rounded shadow-sm"
+      class="hero-content bg-base-100/50 flex-col rounded py-32 shadow-sm lg:flex-row-reverse lg:p-16"
     >
-      {#if !after_download_page}
-        <div class="text-center lg:text-left lg:p-10">
+      {#if !afterDownloadPage}
+        <div class="text-center lg:p-10 lg:text-left">
           <h1
-            class="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
+            class="bg-gradient-to-r from-red-700 via-yellow-600 to-pink-600 bg-clip-text text-5xl font-extrabold text-transparent"
           >
-            Wattpad Downloader
+            WP Downloader
           </h1>
-          <p class="pt-6 text-lg">
-            Download your favourite books with a single click!
+          <div role="alert" class="alert mt-10 max-w-md break-words bg-green-200">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              class="h-6 w-6 shrink-0 stroke-current"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <div>
+              <p>
+                Donators get access to <span class="font-semibold">high-speed PDF Downloads</span>
+              </p>
+              <a href="https://buymeacoffee.com/theonlywayup" class="link" target="_blank"
+                >Donate now</a
+              >
+            </div>
+          </div>
+          <!-- <div role="alert" class="alert bg-cyan-300 mt-5">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              class="h-6 w-6 shrink-0 stroke-current"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <span class="text-lg">Please Donate</span>
+          </div> -->
+          <p class="max-w-md pt-6 text-lg">
+            Download your favourite books with a single click. Have a great new year!
           </p>
-          <ul class="pt-4 list list-inside text-xl">
+          <ul class="list list-inside pt-4 text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
-            <li>12/24 - 📂 Improved Performance</li>
+            <!-- <li>12/24 - ⚡ Super-fast Downloads!</li>
+            <li>12/24 - 📑 PDF Downloads!</li> -->
+            <li>12/24 - 📂 Less Errors, Throttled Downloads</li>
             <li>11/24 - 🔗 Paste Links!</li>
             <li>11/24 - 📨 Send to Kindle Support!</li>
 
@@ -112,48 +173,46 @@
             <li>06/24 - 🖼️ Image Downloading!</li>
           </ul>
         </div>
-        <div class="card shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
+        <div class="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
           <form class="card-body">
             <div class="form-control">
               <input
                 type="text"
                 placeholder="Story URL"
                 class="input input-bordered"
-                class:input-warning={invalid_url}
-                bind:value={input_url}
+                class:input-warning={invalidUrl}
+                bind:value={() => inputUrl, setInputUrl}
                 required
                 name="input_url"
               />
               <label class="label" for="input_url">
-                {#if invalid_url}
+                {#if invalidUrl}
                   <p class=" text-red-500">
                     Refer to (<button
                       class="link font-semibold"
-                      onclick="StoryURLTutorialModal.showModal()"
+                      onclick={() => storyURLTutorialModal.showModal()}
                       data-umami-event="Part StoryURLTutorialModal Open"
                       >How to get a Story URL</button
                     >).
                   </p>
                 {:else}
                   <button
-                    class="label-text link font-semibold"
-                    onclick="StoryURLTutorialModal.showModal()"
-                    data-umami-event="StoryURLTutorialModal Open"
-                    >How to get a Story URL</button
+                    class="link label-text font-semibold"
+                    onclick={() => storyURLTutorialModal.showModal()}
+                    data-umami-event="StoryURLTutorialModal Open">How to get a Story URL</button
                   >
                 {/if}
               </label>
-              <label class="cursor-pointer label">
-                <span class="label-text"
-                  >This is a Paid Story, and I've purchased it</span
-                >
+
+              <label class="label cursor-pointer">
+                <span class="label-text">This is a Paid Story, and I've purchased it</span>
                 <input
                   type="checkbox"
-                  class="checkbox checkbox-warning shadow-md"
-                  bind:checked={is_paid_story}
+                  class="checkbox-warning checkbox shadow-md"
+                  bind:checked={isPaidStory}
                 />
               </label>
-              {#if is_paid_story}
+              {#if isPaidStory}
                 <label class="input input-bordered flex items-center gap-2">
                   Username
                   <input
@@ -181,50 +240,54 @@
 
             <div class="form-control mt-6">
               <a
-                class="btn btn-primary rounded-l-none"
-                class:btn-disabled={button_disabled}
+                class="btn rounded-l-none"
+                class:btn-primary={!downloadAsPdf}
+                class:btn-secondary={downloadAsPdf}
+                class:btn-disabled={buttonDisabled}
                 data-umami-event="Download"
                 href={url}
-                on:click={() => (after_download_page = true)}>Download</a
+                onclick={() => (afterDownloadPage = true)}>Download</a
               >
 
-              <label class="cursor-pointer label">
-                <span class="label-text"
-                  >Include Images (<strong>Slower Download</strong>)</span
-                >
+              <!-- <label class="swap w-fit label mt-2">
+                <input type="checkbox" bind:checked={downloadAsPdf} />
+                <div class="swap-on">
+                  Downloading as <span class=" underline text-bold">PDF</span> (Click)
+                </div>
+                <div class="swap-off">
+                  Downloading as <span class=" underline text-bold">EPUB</span> (Click)
+                </div>
+              </label> -->
+
+              <label class="label cursor-pointer">
+                <span class="label-text">Include Images (<strong>Slower Download</strong>)</span>
                 <input
                   type="checkbox"
-                  class="checkbox checkbox-warning shadow-md"
-                  bind:checked={download_images}
+                  class="checkbox-warning checkbox shadow-md"
+                  bind:checked={downloadImages}
                 />
               </label>
             </div>
           </form>
-
-          <button
-            data-feedback-fish
-            class="link pb-4"
-            data-umami-event="Feedback">Feedback</button
-          >
         </div>
       {:else}
-        <div class="text-center max-w-4xl">
-          <h1 class="font-bold text-3xl">
+        <div class="max-w-4xl text-center">
+          <h1 class="text-3xl font-bold">
             Your download has <span
-              class="text-transparent bg-clip-text bg-gradient-to-r to-pink-600 via-yellow-600 from-red-700"
+              class="bg-gradient-to-r from-red-700 via-yellow-600 to-pink-600 bg-clip-text text-transparent"
               >Started</span
             >
           </h1>
-          <div class="py-4 space-y-2">
+          <div class="space-y-2 py-4">
             <p class="text-2xl">
               If you found this site useful, please consider <a
                 href="https://github.com/TheOnlyWayUp/WattpadDownloader"
                 target="_blank"
                 class="link"
                 data-umami-event="Star">starring the project</a
-              > to support WattpadDownloader.
+              > to support WPDownloader.
             </p>
-            <p class="text-lg pt-2">
+            <p class="pt-2 text-lg">
               You can also join us on <a
                 href="https://discord.gg/P9RHC4KCwd"
                 target="_blank"
@@ -233,44 +296,44 @@
               >, where we release features early and discuss updates.
             </p>
           </div>
-          <button
-            on:click={() => {
-              after_download_page = false;
-              input_url = "";
-            }}
-            class="btn btn-outline btn-lg mt-10">Download More</button
-          >
+          <div class="grid grid-rows-2 justify-center gap-y-10">
+            <a
+              href="https://buymeacoffee.com/theonlywayup"
+              target="_blank"
+              class="btn btn-lg mt-10 bg-cyan-200 hover:bg-green-200">Buy me a Coffee! 🍵</a
+            >
+            <button
+              onclick={() => {
+                afterDownloadPage = false;
+                inputUrl = "";
+              }}
+              class="btn btn-outline btn-lg">Download More</button
+            >
+          </div>
         </div>
       {/if}
     </div>
   </div>
 </div>
 
-<!-- Open the modal using ID.showModal() method -->
-
-<dialog id="StoryURLTutorialModal" class="modal">
+<dialog class="modal" bind:this={storyURLTutorialModal}>
   <div class="modal-box">
     <form method="dialog">
-      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-        >✕</button
-      >
+      <button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2">✕</button>
     </form>
-    <h3 class="font-bold text-lg">Finding the Story URL</h3>
-    <ol class="list list-disc list-inside py-4 space-y-4">
-      <li>
-        Copy the URL from the Website, or hit share and copy the URL on the App.
-      </li>
+    <h3 class="text-lg font-bold">Finding the Story URL</h3>
+    <ol class="list list-inside list-disc space-y-4 py-4">
+      <li>Copy the URL from the Website, or hit share and copy the URL on the App.</li>
       <li>
         For example,
-        <span class="font-mono bg-slate-100 p-1"
-          >wattpad.com/<span class="bg-amber-200 rounded-sm">story</span
+        <span class="bg-slate-100 p-1 font-mono"
+          >wattpad.com/<span class="rounded-sm bg-amber-200">story</span
           >/237369078-wattpad-books-presents</span
         >.
       </li>
       <li>
-        <span class="font-mono bg-slate-100 p-1"
-          >https://www.wattpad.com/939103774-given</span
-        > is okay too.
+        <span class="bg-slate-100 p-1 font-mono">https://www.wattpad.com/939103774-given</span> is okay
+        too.
       </li>
       <li>Paste the URL and hit Download!</li>
     </ol>

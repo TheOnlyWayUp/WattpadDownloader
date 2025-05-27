@@ -1,9 +1,12 @@
 __pycache__
 venv
 *epub
+*pdf
+*html
 data
 *ipynb
 build
+.idea
 .vscode
 .venv
 .env

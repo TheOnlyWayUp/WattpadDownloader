@@ -2,24 +2,31 @@
 
 from typing import Optional
 import asyncio
-import tempfile
 from pathlib import Path
-from io import BytesIO
 from enum import Enum
+from zipfile import ZipFile
 from eliot import start_action
 from aiohttp import ClientResponseError
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
-from ebooklib import epub
 from create_book import (
-    retrieve_story,
-    set_cover,
-    set_metadata,
-    add_chapters,
-    slugify,
-    wp_get_cookies,
+    EPUBGenerator,
+    PDFGenerator,
+    fetch_story,
     fetch_story_from_partId,
+    fetch_story_content_zip,
+    fetch_image,
+    fetch_cookies,
+    WattpadError,
+    StoryNotFoundError,
+    generate_clean_part_html,
+    slugify,
     logger,
 )
 
@@ -69,6 +76,11 @@ class RequestCancelledMiddleware:
 app.add_middleware(RequestCancelledMiddleware)
 
 
+class DownloadFormat(Enum):
+    # pdf = "pdf"
+    epub = "epub"
+
+
 class DownloadMode(Enum):
     story = "story"
     part = "part"
@@ -101,11 +113,21 @@ def download_error_handler(request: Request, exception: ClientResponseError):
             )
 
 
+@app.exception_handler(WattpadError)
+def download_wp_error_handler(request: Request, exception: WattpadError):
+    if isinstance(exception, StoryNotFoundError):
+        return HTMLResponse(
+            status_code=404,
+            content='This story does not exist, or has been deleted. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+        )
+
+
 @app.get("/download/{download_id}")
 async def handle_download(
     download_id: int,
     download_images: bool = False,
     mode: DownloadMode = DownloadMode.story,
+    format: DownloadFormat = DownloadFormat.epub,
     username: Optional[str] = None,
     password: Optional[str] = None,
 ):
@@ -113,6 +135,7 @@ async def handle_download(
         action_type="download",
         download_id=download_id,
         download_images=download_images,
+        format=format,
         mode=mode,
     ):
         if username and not password or password and not username:
@@ -127,7 +150,7 @@ async def handle_download(
         if username and password:
             # username and password are URL-Encoded by the frontend. FastAPI automatically decodes them.
             try:
-                cookies = await wp_get_cookies(username=username, password=password)
+                cookies = await fetch_cookies(username=username, password=password)
             except ValueError:
                 logger.error("Invalid username or password.")
                 return HTMLResponse(
@@ -140,39 +163,59 @@ async def handle_download(
         match mode:
             case DownloadMode.story:
                 story_id = download_id
-                metadata = await retrieve_story(story_id, cookies)
+                metadata = await fetch_story(story_id, cookies)
             case DownloadMode.part:
                 story_id, metadata = await fetch_story_from_partId(download_id, cookies)
 
-        logger.info(f"Retrieved story id ({story_id=})")
+        cover_data = await fetch_image(
+            metadata["cover"].replace("-256-", "-512-")
+        )  # Increase resolution
 
-        book = epub.EpubBook()
-        set_metadata(book, metadata)
-        await set_cover(book, metadata)
+        match format:
+            case DownloadFormat.epub:
+                book = EPUBGenerator(metadata, cover_data)
+                media_type = "application/epub+zip"
+            # case DownloadFormat.pdf:
+            #     book = PDFGenerator(metadata, cover_data)
+            #     media_type = "application/pdf"
 
-        async for title in add_chapters(
-            book, metadata, download_images=download_images, cookies=cookies
+        logger.info(f"Retrieved story metadata and cover ({story_id=})")
+
+        story_zip = await fetch_story_content_zip(story_id, cookies)
+        archive = ZipFile(story_zip, "r")
+
+        part_contents = [
+            generate_clean_part_html(
+                part, archive.read(str(part["id"])).decode("utf-8")
+            )
+            for part in metadata["parts"]
+        ]
+
+        async for title in book.add_chapters(
+            part_contents, download_images=download_images
         ):
             ...
 
-        # Book is compiled
-        temp_file = tempfile.NamedTemporaryFile(
-            suffix=".epub", delete=True
-        )  # Thanks https://stackoverflow.com/a/75398222
+        book_buffer = book.dump()
 
-        # create epub file
-        epub.write_epub(temp_file, book, {})
-
-        temp_file.file.seek(0)
-        book_data = temp_file.file.read()
+        async def iterfile():
+            while chunk := book_buffer.read(512 * 4):  # 4 kb/s
+                await asyncio.sleep(0.1)  # throttle download speed
+                yield chunk
 
         return StreamingResponse(
-            BytesIO(book_data),
-            media_type="application/epub+zip",
+            iterfile(),
+            media_type=media_type,
             headers={
-                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.epub"'  # Thanks https://stackoverflow.com/a/72729058
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"'  # Thanks https://stackoverflow.com/a/72729058
             },
         )
+
+
+@app.get("/donate")
+def donate():
+    """Redirect to donation URL."""
+    return RedirectResponse("https://buymeacoffee.com/theonlywayup")
 
 
 app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
@@ -181,4 +224,4 @@ app.mount("/", StaticFiles(directory=BUILD_PATH), "static")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=80, workers=16)
+    uvicorn.run("main:app", host="0.0.0.0", port=80)

@@ -1,4 +1,4 @@
-WattpadDownloader ([Demo](https://wpd.rambhat.la))
+WattpadDownloader ([Demo](https://wpd.my/))
 ---
 Straightforward, Extendable WebApp to download Wattpad Books as EPUB Files.
 
@@ -8,14 +8,17 @@ Straightforward, Extendable WebApp to download Wattpad Books as EPUB Files.
 Stars ⭐ are appreciated. Thanks!
 
 ## Features
-- ⚡ Lightweight Frontend and Minimal Javascript.
+- ⚡ Lightweight Frontend.
 - 🪙 Supports Authentication (Download paid stories from your account!)
 - 🌐 API Support (Visit the `/docs` path on your instance for more.)
-- 🐇 Fast Generation, Ratelimit Handling.
+- 🐇 Fast Generation
+- 🗃️ Caching, Ratelimit handling
 - 🐳 Docker Support
-- 🏷️ Generated EPUB File includes Metadata. (Dublin Core Spec)
-- 📖 Plays well with E-Readers. (Kindle Support with Send2Kindle, ReMarkable, KOBO, KOReader...)
+- 🏷️ Generated books contain metadata, supported by Calibre and other E-Book Software.
+- 📖 Plays well with E-Readers. (Send2Kindle, KOReader, ReMarkable, KOBO, Calibre Reader...)
 - 💻 Easily Hackable. Extend with ease.
+
+Still not convinced? Take a look some [sample downloads](./samples/).
 
 
 ## Set Up
@@ -38,6 +41,10 @@ REDIS_CONNECTION_URL=redis://username:password@host:port
 2. Run the container and supply the .env file, `docker run -d -p 5042:80 --env-file .env wp_downloader`
 Alternatively, if Redis is running on localhost
 2. Modify your `.env` file, replacing `localhost` with `host.docker.internal`. `redis://localhost:6379` should become `redis://host.docker.internal:6379`. Then, start the container, `docker run -d -p 5042:80 --env-file .env --add-host host.docker.internal:host-gateway wp_downloader`
+
+## Development
+- Developers, ensure you have `wkhtmltopdf` available on your PATH. 
+- Run `wkhtmltopdf` on your terminal, if you see "Reduced Functionality", run [this script](https://raw.githubusercontent.com/JazzCore/python-pdfkit/b7bf798b946fa5655f8e82f0d80dec6b6b13d414/ci/before-script.sh) to install a fully featured compilation of `wkhtmltopdf.
 
 ---
 

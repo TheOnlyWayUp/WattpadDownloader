@@ -1,5 +1,12 @@
 <script>
-  import "../app.pcss";
+  import "../app.css";
+  /**
+   * @typedef {Object} Props
+   * @property {import('svelte').Snippet} [children]
+   */
+
+  /** @type {Props} */
+  let { children } = $props();
 </script>
 
 <svelte:head>
@@ -10,23 +17,23 @@
   </style>
 </svelte:head>
 
-<slot />
+{@render children()}
 
 <footer
-  class="footer footer-center p-4 bg-base-300 text-base-content bottom-0 fixed"
+  class="footer footer-center fixed bottom-0 bg-base-300 p-4 text-base-content"
 >
   <aside>
-    <div class="grid grid-cols-3 max-w-lg w-full">
+    <div class="flex w-full max-w-lg flex-row">
       <a
-        href="https://patreon.com/theonlywayup"
+        href="https://buymeacoffee.com/theonlywayup"
         target="_blank"
         class="link"
-        data-umami-event="Footer Donate">Patreon</a
+        data-umami-event="Footer Donate">Buy me a Coffee!</a
       >
       <a
         href="https://rambhat.la"
         target="_blank"
-        class="link"
+        class="link flex-1"
         data-umami-event="Footer AboutMe">About Me</a
       >
       <a
@@ -37,7 +44,7 @@
       >
     </div>
     <p>
-      Copyright © 2024 - All rights reserved by <a
+      Copyright © 2025 - All rights reserved by <a
         href="https://rambhat.la"
         class="link"
         target="_blank"
