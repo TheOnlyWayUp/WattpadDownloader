@@ -155,6 +155,7 @@
           <ul class="list list-inside pt-4 text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
             <!-- <li>12/24 - ⚡ Super-fast Downloads!</li>
+            <li>05/27 - ⚖️ Legal Compliance</li>
             <li>12/24 - 📑 PDF Downloads!</li> -->
             <li>12/24 - 📂 Less Errors, Throttled Downloads</li>
             <li>11/24 - 🔗 Paste Links!</li>
