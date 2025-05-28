@@ -198,14 +198,14 @@
                   </p>
                 {:else}
                   <button
-                    class="link label-text font-semibold"
+                    class="link label-text font-semibold text-gray-800"
                     onclick={() => storyURLTutorialModal.showModal()}
                     data-umami-event="StoryURLTutorialModal Open">How to get a Story URL</button
                   >
                 {/if}
               </label>
 
-              <label class="label cursor-pointer">
+              <label class="label cursor-pointer text-gray-800">
                 <span class="label-text">This is a Paid Story, and I've purchased it</span>
                 <input
                   type="checkbox"
@@ -261,7 +261,7 @@
               </label> -->
 
               <label class="label cursor-pointer">
-                <span class="label-text">Include Images (<strong>Slower Download</strong>)</span>
+                <span class="label-text text-gray-800">Include Images (<strong>Slower Download</strong>)</span>
                 <input
                   type="checkbox"
                   class="checkbox-warning checkbox shadow-md"
