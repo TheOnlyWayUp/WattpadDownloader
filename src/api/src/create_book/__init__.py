@@ -1,3 +1,5 @@
+# ruff: noqa: F401
+
 from .create_book import (
     fetch_story,
     fetch_story_from_partId,

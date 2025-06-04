@@ -17,7 +17,6 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from create_book import (
     EPUBGenerator,
-    PDFGenerator,
     fetch_story,
     fetch_story_from_partId,
     fetch_story_content_zip,
