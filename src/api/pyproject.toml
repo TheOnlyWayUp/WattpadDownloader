@@ -26,3 +26,8 @@ ignore = ['E402'] # module import not at top of file
 
 [tool.uv.sources]
 aiohttp-client-cache = { git = "https://github.com/TheOnlyWayUp/aiohttp-client-cache.git", rev = "keydb-ttl" } # Fork which leverages keydb's EXPIREMEMBER feature for TTLs on Hash members.
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+]
