@@ -3,41 +3,17 @@ from typing import Optional, Tuple
 from io import BytesIO
 import backoff
 from pydantic import TypeAdapter
-from .config import Config, CacheTypes
 from .logs import logger
 from eliot import start_action
-from dotenv import load_dotenv
 from aiohttp import ClientResponseError
 from aiohttp_client_cache.session import CachedSession
-from aiohttp_client_cache import FileBackend, RedisBackend
 from .models import Story
 from .exceptions import PartNotFoundError, StoryNotFoundError
+from .vars import headers, cache
 
-load_dotenv(override=True)
-
-config = Config()
 story_ta = TypeAdapter(Story)
 
 # --- #
-
-headers = {
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
-}
-
-if config.USE_CACHE:
-    match config.CACHE_TYPE:
-        case CacheTypes.file:
-            cache = FileBackend(use_temp=True, expire_after=43200)  # 12 hours
-        case CacheTypes.redis:
-            cache = RedisBackend(
-                cache_name="wpd-aiohttp-cache",
-                address=config.REDIS_CONNECTION_URL,
-                expire_after=43200,  # 12 hours
-            )
-else:
-    cache = None
-
-logger.info(f"Using {cache=}")
 
 
 async def fetch_cookies(username: str, password: str) -> dict:
@@ -148,18 +124,3 @@ async def fetch_story_content_zip(
                 bytes_stream = BytesIO(await response.read())
 
         return bytes_stream
-
-
-@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
-async def fetch_image(url: str, should_cache: bool = False) -> bytes:
-    """Fetch image bytes."""
-    with start_action(action_type="api_fetch_image", url=url):
-        async with CachedSession(
-            headers=headers, cache=cache if should_cache else None
-        ) as session:  # Don't cache images.
-            async with session.get(url) as response:
-                response.raise_for_status()
-
-                body = await response.read()
-
-        return body

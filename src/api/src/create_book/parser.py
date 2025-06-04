@@ -1,4 +1,11 @@
+from typing import List, Tuple
+from aiohttp import ClientSession
 from bs4 import BeautifulSoup, Tag
+from itertools import batched, chain
+
+import asyncio
+from .vars import headers
+from eliot import start_action
 
 
 def clean_tree(title: str, id: int, body: str) -> BeautifulSoup:
@@ -48,3 +55,27 @@ def clean_tree(title: str, id: int, body: str) -> BeautifulSoup:
                 insert_at.append(br_tag)
 
     return new_soup
+
+
+async def fetch_image(url: str) -> bytes | None:
+    """Fetch image bytes."""
+    with start_action(action_type="api_fetch_image", url=url):
+        async with ClientSession(headers=headers) as session:  # Don't cache images.
+            async with session.get(url) as response:
+                if not response.ok:
+                    return None
+
+                body = await response.read()
+
+        return body
+
+
+async def download_tree_images(tree: BeautifulSoup) -> Tuple[bytes]:
+    image_urls = [img["src"] for img in tree.find_all("img")]
+    downloaded_images: List[bytes] = list(
+        chain(
+            await asyncio.gather(*[fetch_image(url) for url in chunk])
+            for chunk in batched(image_urls, 3)
+        )
+    )
+    return downloaded_images
