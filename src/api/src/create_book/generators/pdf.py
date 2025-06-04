@@ -5,10 +5,10 @@ import bs4
 from weasyprint import HTML, CSS
 from weasyprint.text.fonts import FontConfiguration
 from exiftool import ExifTool
-from logs import exiftool_logger
+from ..logs import exiftool_logger
 from bs4 import BeautifulSoup
-from utils import smart_trim
-from models import Story
+from ..utils import smart_trim
+from ..models import Story
 from eliot import start_action
 from io import BytesIO
 

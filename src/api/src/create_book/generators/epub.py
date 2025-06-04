@@ -1,6 +1,6 @@
 from ebooklib import epub
 from typing import List
-from models import Story
+from ..models import Story
 from io import BytesIO
 import bs4
 from aiohttp_client_cache.session import CachedSession

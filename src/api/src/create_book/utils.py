@@ -3,7 +3,7 @@ import bs4
 import unicodedata
 from bs4 import BeautifulSoup
 from typing import cast
-from models import Part
+from .models import Part
 
 
 def smart_trim(text: str, max_length: int = 400) -> str:

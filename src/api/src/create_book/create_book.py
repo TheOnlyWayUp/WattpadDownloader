@@ -3,15 +3,15 @@ from typing import Optional, Tuple
 from io import BytesIO
 import backoff
 from pydantic import TypeAdapter
-from config import Config, CacheTypes
-from logs import logger
+from .config import Config, CacheTypes
+from .logs import logger
 from eliot import start_action
 from dotenv import load_dotenv
 from aiohttp import ClientResponseError
 from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend, RedisBackend
-from models import Story
-from exceptions import PartNotFoundError, StoryNotFoundError
+from .models import Story
+from .exceptions import PartNotFoundError, StoryNotFoundError
 
 load_dotenv(override=True)
 
