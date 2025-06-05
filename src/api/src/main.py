@@ -33,10 +33,6 @@ from create_book import (
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
 
-headers = {
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
-}
-
 
 class RequestCancelledMiddleware:
     # Thanks https://github.com/fastapi/fastapi/discussions/11360#discussion-6427734
