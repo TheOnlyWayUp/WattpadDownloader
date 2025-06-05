@@ -1,5 +1,4 @@
 from .config import Config, CacheTypes
-from aiohttp_client_cache.session import CachedSession
 from aiohttp_client_cache import FileBackend, RedisBackend
 from dotenv import load_dotenv
 from .logs import logger
