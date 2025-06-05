@@ -5,9 +5,10 @@ from bs4 import BeautifulSoup
 from ebooklib import epub
 
 from ..models import Story
+from .types import AbstractGenerator
 
 
-class EPUBGenerator:
+class EPUBGenerator(AbstractGenerator):
     def __init__(
         self,
         metadata: Story,
@@ -23,6 +24,7 @@ class EPUBGenerator:
         self.book = epub.EpubBook()
 
     def add_metadata(self):
+        """Add metadata to epub."""
         self.book.add_author(self.story["user"]["username"])
 
         self.book.add_metadata("DC", "title", self.story["title"])
@@ -48,6 +50,7 @@ class EPUBGenerator:
         )
 
     def add_cover(self):
+        """Add cover to epub."""
         self.book.set_cover("cover.jpg", self.cover)
         cover_chapter = epub.EpubHtml(
             file_name="titlepage.xhtml",  # Standard for cover page
@@ -56,6 +59,7 @@ class EPUBGenerator:
         self.book.add_item(cover_chapter)
 
     def add_chapters(self):
+        """Add chapters to epub, replacing references to image urls to static image paths if images are provided during initialization."""
         chapters = []
 
         for idx, (part, tree) in enumerate(zip(self.story["parts"], self.parts)):
