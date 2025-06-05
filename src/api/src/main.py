@@ -17,7 +17,6 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from create_book import (
     EPUBGenerator,
-    PDFGenerator,
     fetch_story,
     fetch_story_from_partId,
     fetch_story_content_zip,
@@ -33,10 +32,6 @@ from create_book import (
 
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
-
-headers = {
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
-}
 
 
 class RequestCancelledMiddleware:

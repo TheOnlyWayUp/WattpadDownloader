@@ -9,7 +9,7 @@ COPY src/frontend/. .
 RUN npm run build
 # Thanks https://stackoverflow.com/q/76988450
 
-FROM python:3.10-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
