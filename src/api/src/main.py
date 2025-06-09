@@ -8,7 +8,7 @@ from zipfile import ZipFile
 
 from aiohttp import ClientResponseError
 from eliot import start_action
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -166,6 +166,8 @@ async def handle_download(
         cover_data = await fetch_image(
             metadata["cover"].replace("-256-", "-512-")
         )  # Increase resolution
+        if not cover_data:
+            raise HTTPException(status_code=422)
 
         match format:
             case DownloadFormat.epub:

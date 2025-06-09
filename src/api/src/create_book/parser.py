@@ -1,6 +1,6 @@
 import asyncio
 from itertools import batched, chain
-from typing import List, Tuple
+from typing import Generator, List, Tuple, cast
 
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup, Tag
@@ -18,15 +18,16 @@ def clean_tree(title: str, id: int, body: str) -> BeautifulSoup:
 """
     )
 
-    insert_at = new_soup.find("section")
+    insert_at = cast(Tag, new_soup.find("section"))
 
-    for tag in list(original_soup.find("body").children):
+    children = cast(Tag, original_soup.find("body")).children
+    for tag in cast(list[Tag], list(children)):
         if tag.name != "p":  # Casted to lower
             print(tag.name)
             continue
 
         style = tag.attrs.get("style")
-        for child in tag.children:
+        for child in cast(list[Tag], tag.children):
             # tag is a <p> enclosing either text, media, or a break
 
             if child.name in [None, "b", "i", "u"]:
@@ -73,12 +74,10 @@ async def fetch_image(url: str) -> bytes | None:
         return body
 
 
-async def download_tree_images(tree: BeautifulSoup) -> Tuple[bytes]:
+async def download_tree_images(tree: BeautifulSoup) -> Generator[bytes]:
     image_urls = [img["src"] for img in tree.find_all("img")]
-    downloaded_images: List[bytes] = list(
-        chain(
-            await asyncio.gather(*[fetch_image(url) for url in chunk])
-            for chunk in batched(image_urls, 3)
-        )
+    downloaded_images: Generator[bytes] = chain(
+        await asyncio.gather(*[fetch_image(url) for url in chunk])
+        for chunk in batched(image_urls, 3)
     )
     return downloaded_images
