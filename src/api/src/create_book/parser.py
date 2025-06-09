@@ -12,7 +12,7 @@ from .vars import headers
 def clean_tree(title: str, id: int, body: str) -> BeautifulSoup:
     original_soup = BeautifulSoup(body)
     new_soup = BeautifulSoup(
-        """
+        f"""
     <h1 class="chapter-name" id={id}>{title}</h1>
     <section class="chapter-body"></section>
 """
