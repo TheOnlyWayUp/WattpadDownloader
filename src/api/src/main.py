@@ -202,6 +202,8 @@ async def handle_download(
 
         logger.info(f"Retrieved story metadata and cover ({story_id=})")
 
+        book.compile()
+
         book_buffer = book.dump()
 
         async def iterfile():
