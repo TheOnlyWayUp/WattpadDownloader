@@ -1,116 +1,108 @@
 from io import BytesIO
-from typing import List
+from typing import Generator, List
 
-import bs4
-from aiohttp_client_cache.session import CachedSession
+from bs4 import BeautifulSoup
 from ebooklib import epub
 
 from ..models import Story
+from .types import AbstractGenerator
 
-headers = {}
 
-
-class EPUBGenerator:
-    """EPUB Generation utilities"""
-
-    def __init__(self, data: Story, cover: bytes):
-        """Initialize EPUBGenerator. Create epub.EpubBook() and set metadata and cover."""
-        self.epub = epub.EpubBook()
-        self.data = data
+class EPUBGenerator(AbstractGenerator):
+    def __init__(
+        self,
+        metadata: Story,
+        part_trees: List[BeautifulSoup],
+        cover: bytes,
+        images: List[Generator[bytes]] | None,
+    ):
+        self.story = metadata
+        self.parts = part_trees
         self.cover = cover
+        self.images = images
 
-        # set metadata, defined in https://www.dublincore.org/specifications/dublin-core/dcmi-terms/#section-2
-        self.epub.add_author(data["user"]["username"])
+        self.book: epub.EpubBook = epub.EpubBook()
 
-        self.epub.add_metadata("DC", "title", data["title"])
-        self.epub.add_metadata("DC", "description", data["description"])
-        self.epub.add_metadata("DC", "date", data["createDate"])
-        self.epub.add_metadata("DC", "modified", data["modifyDate"])
-        self.epub.add_metadata("DC", "language", data["language"]["name"])
+    def add_metadata(self):
+        """Add metadata to epub."""
+        self.book.add_author(self.story["user"]["username"])
 
-        self.epub.add_metadata(
-            None, "meta", "", {"name": "tags", "content": ", ".join(data["tags"])}
+        self.book.add_metadata("DC", "title", self.story["title"])
+        self.book.add_metadata("DC", "description", self.story["description"])
+        self.book.add_metadata("DC", "date", self.story["createDate"])
+        self.book.add_metadata("DC", "modified", self.story["modifyDate"])
+        self.book.add_metadata("DC", "language", self.story["language"]["name"])
+
+        self.book.add_metadata(
+            None, "meta", "", {"name": "tags", "content": ", ".join(self.story["tags"])}
         )
-        self.epub.add_metadata(
-            None, "meta", "", {"name": "mature", "content": str(int(data["mature"]))}
-        )
-        self.epub.add_metadata(
+        self.book.add_metadata(
             None,
             "meta",
             "",
-            {"name": "completed", "content": str(int(data["completed"]))},
+            {"name": "mature", "content": str(int(self.story["mature"]))},
+        )
+        self.book.add_metadata(
+            None,
+            "meta",
+            "",
+            {"name": "completed", "content": str(int(self.story["completed"]))},
         )
 
-        # Set cover
-        self.epub.set_cover("cover.jpg", cover)
+    def add_cover(self):
+        """Add cover to epub."""
+        self.book.set_cover("cover.jpg", self.cover)
         cover_chapter = epub.EpubHtml(
             file_name="titlepage.xhtml",  # Standard for cover page
         )
         cover_chapter.set_content('<img src="cover.jpg">')
-        self.epub.add_item(cover_chapter)
+        self.book.add_item(cover_chapter)
 
-    async def add_chapters(
-        self, contents: List[bs4.Tag], download_images: bool = False
-    ):
-        """Add chapters to the Epub, downloading images if necessary. Sets the table of contents and spine."""
-        chapters: List[epub.EpubHtml] = []
+    def add_chapters(self):
+        """Add chapters to epub, replacing references to image urls to static image paths if images are provided during initialization."""
+        chapters = []
 
-        for cidx, (part, content) in enumerate(zip(self.data["parts"], contents)):
-            title = part["title"]
-
-            # Thanks https://eu17.proxysite.com/process.php?d=5VyWYcoQl%2BVF0BYOuOavtvjOloFUZz2BJ%2Fepiusk6Nz7PV%2B9i8rs7cFviGftrBNll%2B0a3qO7UiDkTt4qwCa0fDES&b=1
+        for idx, (part, tree) in enumerate(zip(self.story["parts"], self.parts)):
             chapter = epub.EpubHtml(
-                title=title,
-                file_name=f"{cidx}_{part['id']}.xhtml",  # See issue #30
-                lang=self.data["language"]["name"],
-                uid=str(part["id"]).encode(),
+                title=part["title"], file_name=f"{idx}_{part['id']}"
             )
 
-            str_content = content.prettify()
-            if download_images:  # ! TODO : Download images elsewhere
-                soup = content
+            if self.images:
+                for img_idx, (img_data, img_tag) in enumerate(
+                    zip(self.images[idx], tree.find_all("img"))
+                ):
+                    path = f"static/{idx}_{part['id']}/{img_idx}.jpeg"
+                    img = epub.EpubImage(
+                        media_type="image/jpeg", content=img_data, file_name=path
+                    )
+                    self.book.add_item(img)
 
-                async with CachedSession(
-                    headers=headers, cache=None
-                ) as session:  # Don't cache images.
-                    for idx, image in enumerate(soup.find_all("img")):
-                        if not image["src"]:
-                            continue
-                        # Find all image tags and filter for those with sources
+                    img_tag["src"] = path
 
-                        async with session.get(image["src"]) as response:
-                            img = epub.EpubImage(
-                                media_type="image/jpeg",
-                                content=await response.read(),
-                                file_name=f"static/{cidx}/{idx}.jpeg",
-                            )
-                            self.epub.add_item(img)
-                            # Fetch image and pack
-
-                            str_content = str_content.replace(
-                                str(image["src"]), f"static/{cidx}/{idx}.jpeg"
-                            )
-
-            chapter.set_content(str_content)
-            self.epub.add_item(chapter)
-
+            chapter.set_content(tree.prettify())
+            self.book.add_item(chapter)
             chapters.append(chapter)
 
-            yield title
-
-        self.epub.toc = chapters
+        # ! Review, are these needed? #11
+        self.book.toc = chapters
 
         # Thanks https://github.com/aerkalov/ebooklib/blob/master/samples/09_create_image/create.py
-        self.epub.add_item(epub.EpubNcx())
-        self.epub.add_item(epub.EpubNav())
+        self.book.add_item(epub.EpubNcx())
+        self.book.add_item(epub.EpubNav())
 
         # create spine
-        self.epub.spine = ["nav"] + chapters
+        self.book.spine = ["nav"] + chapters
+
+    def compile(self):
+        self.add_metadata()
+        self.add_cover()
+        self.add_chapters()
+        return True
 
     def dump(self) -> BytesIO:
         # Thanks https://stackoverflow.com/a/75398222
         buffer = BytesIO()
-        epub.write_epub(buffer, self.epub)
+        epub.write_epub(buffer, self.book)
 
         buffer.seek(0)
 

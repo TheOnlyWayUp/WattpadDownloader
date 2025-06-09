@@ -1,288 +1,204 @@
-import tempfile
 from base64 import b64encode
 from io import BytesIO
-from typing import List, cast
+from pathlib import Path
+from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
+from typing import Generator, List, cast
 
-import bs4
-from bs4 import BeautifulSoup
-from eliot import start_action
+from bs4 import BeautifulSoup, Tag
 from exiftool import ExifTool
+from jinja2 import Template
 from weasyprint import CSS, HTML
 from weasyprint.text.fonts import FontConfiguration
 
-from ..logs import exiftool_logger
 from ..models import Story
-from ..utils import smart_trim
+from .types import AbstractGenerator
+
+DATA_PATH = Path(__file__).parent / "pdf"
+ASSET_PATH = DATA_PATH / "assets"
+
+COPYRIGHT_DATA = {
+    1: {
+        "name": "All Rights Reserved",
+        "statement": "©️ {published_year} by {username}. All Rights Reserved.",
+        "freedoms": "No reuse, redistribution, or modification without permission.",
+        "printing": "Not allowed without explicit permission.",
+        "asset": None,
+    },
+    2: {
+        "name": "Public Domain",
+        "statement": "This work is in the public domain. Originally published in {published_year} by {username}.",
+        "freedoms": "Free to use for any purpose without permission.",
+        "printing": "Allowed for personal or commercial purposes.",
+        "asset": ASSET_PATH / "cc-zero.png",
+    },
+    3: {
+        "name": "Creative Commons Attribution (CC-BY)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution 4.0 International License.",
+        "freedoms": "Allows reuse, redistribution, and modification with credit to the author.",
+        "printing": "Allowed with proper credit.",
+        "asset": ASSET_PATH / "by.png",
+    },
+    4: {
+        "name": "CC Attribution NonCommercial (CC-BY-NC)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.",
+        "freedoms": "Allows reuse and modification for non-commercial purposes with credit.",
+        "printing": "Allowed for non-commercial purposes with proper credit.",
+        "asset": ASSET_PATH / "by-nc.png",
+    },
+    5: {
+        "name": "CC Attribution NonCommercial NoDerivs (CC-BY-NC-ND)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License.",
+        "freedoms": "Allows sharing in original form for non-commercial purposes with credit; no modifications allowed.",
+        "printing": "Allowed for non-commercial purposes in original form with proper credit.",
+        "asset": ASSET_PATH / "by-nc-nd.png",
+    },
+    6: {
+        "name": "CC Attribution NonCommercial ShareAlike (CC-BY-NC-SA)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.",
+        "freedoms": "Allows reuse and modification for non-commercial purposes under the same license, with credit.",
+        "printing": "Allowed for non-commercial purposes with proper credit under the same license.",
+        "asset": ASSET_PATH / "by-nc-sa.png",
+    },
+    7: {
+        "name": "CC Attribution ShareAlike (CC-BY-SA)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.",
+        "freedoms": "Allows reuse and modification for any purpose under the same license, with credit.",
+        "printing": "Allowed with proper credit under the same license.",
+        "asset": ASSET_PATH / "by-sa.png",
+    },
+    8: {
+        "name": "CC Attribution NoDerivs (CC-BY-ND)",
+        "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NoDerivs 4.0 International License.",
+        "freedoms": "Allows sharing in original form for any purpose with credit; no modifications allowed.",
+        "printing": "Allowed in original form with proper credit.",
+        "asset": ASSET_PATH / "by-nd.png",
+    },
+}  # Maps Wattpad Copyright IDs to their corresponding data.
+
+with open(DATA_PATH / "stylesheet.css") as reader:
+    STYLESHEET = reader.read()
 
 
-async def fetch_image(*args, **kwargs):
-    # TODO
-    raise NotImplementedError()
+with open(DATA_PATH / "book.html") as reader:
+    TEMPLATE = reader.read()
 
 
-class PDFGenerator:
-    """PDF Generation utilities"""
-
-    def __init__(self, data: Story, cover: bytes):
-        """Initialize PDGenerator, create PDF Temporary file."""
-        self.data = data
-        self.file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=True)
+class PDFGenerator(AbstractGenerator):
+    def __init__(
+        self,
+        metadata: Story,
+        part_trees: List[BeautifulSoup],
+        cover: bytes,
+        images: List[Generator[bytes]] | None,
+        author_image: bytes,
+    ):
+        self.story = metadata
+        self.parts = part_trees
         self.cover = cover
-        self.content: str = ""
-        self.copyright = {
-            1: {
-                "name": "All Rights Reserved",
-                "statement": "©️ {published_year} by {username}. All Rights Reserved.",
-                "freedoms": "No reuse, redistribution, or modification without permission.",
-                "printing": "Not allowed without explicit permission.",
-                "image_url": None,
+        self.images = images
+        self.author = author_image
+
+        self.book: _TemporaryFileWrapper = NamedTemporaryFile(suffix=".pdf")
+        self.content = TEMPLATE
+
+    def generate_chapters(self) -> dict[int, str]:
+        """Return a dictionary of part_ids to content trees, with image URLs replaced with base64 encoded images if provided during initialization."""
+        data: dict[int, str] = {}
+        for idx, (part, tree) in enumerate(zip(self.story["parts"], self.parts)):
+            if self.images:
+                for img_idx, (img_data, img_tag) in enumerate(
+                    zip(self.images[idx], tree.find_all("img"))
+                ):
+                    img_tag["src"] = (
+                        f"data:image/jpg;base64,{b64encode(img_data).decode()}"
+                    )
+
+            data[part["id"]] = tree.prettify()
+
+        return data
+
+    def populate_template(self, parts: dict[int, str]):
+        """Populate HTML Template with Story data."""
+        copyright = COPYRIGHT_DATA[self.story["copyright"]]
+        data = {
+            "statement": copyright["statement"].format(
+                username=self.story["user"]["username"],
+                published_year=self.story["createDate"].split("-", 2)[0],
+            ),
+            "author": self.story["user"]["username"],
+            "freedoms": copyright["freedoms"],
+            "printing": copyright["printing"],
+            "book_id": self.story["id"],
+            "book_title": self.story["title"],
+            "cover": f"data:image/jpg;base64,{b64encode(self.cover).decode()}",
+            "username": self.story["user"]["username"],
+            "description": self.story["description"],
+            "avatar": b64encode(self.author).decode(),
+            "copyright": {
+                "data": b64encode(copyright["asset"].read_bytes()).decode()
+                if copyright["asset"]
+                else "",
+                "name": copyright["name"],
             },
-            2: {
-                "name": "Public Domain",
-                "statement": "This work is in the public domain. Originally published in {published_year} by {username}.",
-                "freedoms": "Free to use for any purpose without permission.",
-                "printing": "Allowed for personal or commercial purposes.",
-                "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/cc-zero.png",
-            },
-            3: {
-                "name": "Creative Commons Attribution (CC-BY)",
-                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution 4.0 International License.",
-                "freedoms": "Allows reuse, redistribution, and modification with credit to the author.",
-                "printing": "Allowed with proper credit.",
-                "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png",
-            },
-            4: {
-                "name": "CC Attribution NonCommercial (CC-BY-NC)",
-                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.",
-                "freedoms": "Allows reuse and modification for non-commercial purposes with credit.",
-                "printing": "Allowed for non-commercial purposes with proper credit.",
-                "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png",
-            },
-            5: {
-                "name": "CC Attribution NonCommercial NoDerivs (CC-BY-NC-ND)",
-                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License.",
-                "freedoms": "Allows sharing in original form for non-commercial purposes with credit; no modifications allowed.",
-                "printing": "Allowed for non-commercial purposes in original form with proper credit.",
-                "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-nd.png",
-            },
-            6: {
-                "name": "CC Attribution NonCommercial ShareAlike (CC-BY-NC-SA)",
-                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.",
-                "freedoms": "Allows reuse and modification for non-commercial purposes under the same license, with credit.",
-                "printing": "Allowed for non-commercial purposes with proper credit under the same license.",
-                "image_url": "http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-sa.png",
-            },
-            7: {
-                "name": "CC Attribution ShareAlike (CC-BY-SA)",
-                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.",
-                "freedoms": "Allows reuse and modification for any purpose under the same license, with credit.",
-                "printing": "Allowed with proper credit under the same license.",
-                "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png",
-            },
-            8: {
-                "name": "CC Attribution NoDerivs (CC-BY-ND)",
-                "statement": "©️ {published_year} by {username}. This work is licensed under a Creative Commons Attribution-NoDerivs 4.0 International License.",
-                "freedoms": "Allows sharing in original form for any purpose with credit; no modifications allowed.",
-                "printing": "Allowed in original form with proper credit.",
-                "image_url": "https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nd.png",
-            },
+            "parts": parts,
         }
 
-        with open("./pdf/stylesheet.css") as reader:
-            self.stylesheet = reader.read()
-        with open("./pdf/book.html") as reader:
-            self.template = reader.read()
+        self.content: str = Template(self.content).render(data)
 
-    async def generate_cover_and_copyright_html(
-        self,
-    ) -> str:
-        """Generate Cover and Copyright file, fetch copyright image (cached), use self.cover for cover."""
+    def generate_pdf(self):
+        """Generate and write the PDF to a temporary file (self.book)."""
+        font_config = FontConfiguration()
 
-        copyright_data = self.copyright[self.data["copyright"]]
+        stylesheet_obj = CSS(string=STYLESHEET, font_config=font_config)
 
-        template = self.template
-        about_copyright = (
-            template.replace(
-                "{statement}",
-                copyright_data["statement"].format(
-                    username=self.data["user"]["username"],
-                    published_year=self.data["createDate"].split("-", 2)[0],
-                ),
-            )
-            .replace("{author}", self.data["user"]["username"])
-            .replace("{freedoms}", copyright_data["freedoms"])
-            .replace(
-                "{printing}",
-                copyright_data["printing"],
-            )
-            .replace("{book_id}", self.data["id"])
-            .replace("{book_title}", self.data["title"])
+        html_obj = HTML(string=self.content)
+        html_obj.write_pdf(
+            self.book.name, stylesheets=[stylesheet_obj], font_config=font_config
         )
 
-        copyright_image = (
-            await fetch_image(copyright_data["image_url"], should_cache=True)
-            if copyright_data["image_url"]
-            else None
-        )
-        image_block = (
-            """<img src="{image_url}" 
-alt="{name}" 
-width="88" 
-height="31" 
-id="copyright-license-image">""".format(
-                image_url=f"data:image/jpg;base64,{b64encode(copyright_image).decode()}",
-                name=copyright_data["name"],
-            )
-            if copyright_image
-            else ""
-        )
-        about_copyright = (
-            about_copyright.replace(
-                "{copyright_image}",
-                image_block,
-            )
-            if image_block
-            else about_copyright.replace("{copyright_image}", "")
-        )
-        about_copyright = about_copyright.replace(
-            "{cover}", f"data:image/jpg;base64,{b64encode(self.cover).decode()}"
-        )
+    def add_metadata(self):
+        """Write metadata to generated PDF file at self.book, using ExifTool."""
 
-        self.template = about_copyright
-        return about_copyright
+        clean_description = (
+            self.story["description"].strip().replace("\n", "$/")
+        )  # exiftool doesn't parse \ns correctly, they support $/ for the same instead. `&#xa;` is another option.
 
-    async def generate_about_author_chapter(self) -> str:
-        """Generate About the Author file, fetch avatar."""
-        author_avatar = (
-            await fetch_image(
-                self.data["user"]["avatar"].replace("128", "512")
-            )  # Increase image resolution
-            if self.data["user"]["avatar"]
-            else None
-        )
-        about_author = self.template.replace(
-            "{username}", self.data["user"]["username"]
-        ).replace("{description}", smart_trim(self.data["user"]["description"]))
+        metadata = {
+            "Author": self.story["user"]["username"],
+            "Title": self.story["title"],
+            "Subject": clean_description,
+            "CreationDate": self.story["createDate"],
+            "ModDate": self.story["modifyDate"],
+            "Keywords": ",".join(self.story["tags"]),
+            "Language": self.story["language"]["name"],
+            "Completed": self.story["completed"],
+            "MatureContent": self.story["mature"],
+            "Producer": "Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader",
+        }  # As per https://exiftool.org/TagNames/PDF.html
 
-        about_author = (
-            about_author.replace(
-                "{avatar}",
-                f"""
-                <img src="data:image/jpg;base64,{b64encode(author_avatar).decode()}" alt="Author's profile picture" id="author-profile-picture">""",
-            )
-            if author_avatar
-            else about_author.replace("{avatar}", "")
-        )
-
-        self.template = about_author
-        return about_author
-
-    def generate_toc(self):
-        ids = [part["id"] for part in self.data["parts"]]
-        clean = BeautifulSoup(
-            """
-        <section id="contents" class="toc">
-        <h1>Table of Contents</h1>
-        <ul></ul>
-        </section>
-        """,
-            "html.parser",
-        )  # html.parser doesn't create <html>/<body> tags automatically
-
-        ul = cast(bs4.Tag, clean.find("ul"))
-        for part_id in ids:
-            li = clean.new_tag("li")
-            a = clean.new_tag("a")
-            a["href"] = f"#{part_id}"
-            li.append(a)
-            ul.append(li)
-
-        insert_point = cast(bs4.Tag, self.tree.find("div", {"id": "book"}))
-        insert_point.append(clean)
-        return str(clean)
-
-    async def add_chapters(
-        self, contents: List[bs4.Tag], download_images: bool = False
-    ):
-        """Add chapters to the PDF, downloading images if necessary. Also add Cover, Copyright, and About the Author pages."""
-
-        # # Cover and Copyright Page
-        await self.generate_cover_and_copyright_html()
-        await self.generate_about_author_chapter()
-        self.tree = BeautifulSoup(self.template, "lxml")
-
-        self.generate_toc()
-        for part, content in zip(self.data["parts"], contents):
-            insert_point = cast(bs4.Tag, self.tree.find("div", {"id": "book"}))
-            insert_point.append(content)
-
-            yield part["title"]
-
-        # # About the Author page
-        # about_author_html = await self.generate_about_author_chapter()
-
-        # chapters.insert(0, cover_and_copyright_html)
-        # chapters.append(about_author_html)
-
-        with start_action(
-            action_type="generate_pdf",
-            output_filename=self.file.name,
-            title=self.data["title"],
-        ):
-            # PDF Generation with wkhtmltopdf, written to self.file
-
-            # At this stage, we have a bunch of HTML Files representing all the chapters that need to be generated. PDFKit handles ToC generation, so that's not included.
-
-            font_config = FontConfiguration()
-
-            stylesheet_obj = CSS(string=self.stylesheet, font_config=font_config)
-
-            html_obj = HTML(string=str(self.tree))
-            html_obj.write_pdf(
-                self.file.name, stylesheets=[stylesheet_obj], font_config=font_config
-            )
-
-        with start_action(action_type="add_metadata") as action:
-            # Metadata generation with Exiftool
-            clean_description = (
-                self.data["description"].strip().replace("\n", "$/")
-            )  # exiftool doesn't parse \ns correctly, they support $/ for the same instead. `&#xa;` is another option.
-
-            action.log(f"clean_description: {clean_description}")
-
-            metadata = {
-                "Author": self.data["user"]["username"],
-                "Title": self.data["title"],
-                "Subject": clean_description,
-                "CreationDate": self.data["createDate"],
-                "ModDate": self.data["modifyDate"],
-                "Keywords": ",".join(self.data["tags"]),
-                "Language": self.data["language"]["name"],
-                "Completed": self.data["completed"],
-                "MatureContent": self.data["mature"],
-                "Producer": "Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader",
-            }  # As per https://exiftool.org/TagNames/PDF.html
-
-            action.log(f"options: {metadata}")
-
-            with ExifTool(
-                config_file="../exiftool.config", logger=exiftool_logger
-            ) as et:
-                # Custom configuration adds Completed and MatureContent tags.
-                # exiftool logger logs executed command
-                et.execute(
-                    *(
-                        [f"-{key}={value}" for key, value in metadata.items()]
-                        + [
-                            "-overwrite_original",
-                            self.file.file.name,
-                        ]
-                    )
+        with ExifTool(config_file=DATA_PATH / "exiftool.config") as et:
+            # Custom configuration adds Completed and MatureContent tags.
+            # exiftool logger logs executed command
+            et.execute(
+                *(
+                    [f"-{key}={value}" for key, value in metadata.items()]
+                    + [
+                        "-overwrite_original",
+                        self.book.file.name,
+                    ]
                 )
+            )
+
+    def compile(self):
+        parts = self.generate_chapters()
+        self.populate_template(parts)
+        self.generate_pdf()
+        self.add_metadata()
+        return True
 
     def dump(self) -> BytesIO:
-        self.file.seek(0)
-        buffer = BytesIO(self.file.read())
-        self.file.close()
+        self.book.seek(0)
+        buffer = BytesIO(self.book.read())
+        self.book.close()
 
         return buffer

@@ -1,6 +1,6 @@
 from io import BytesIO
 from tempfile import _TemporaryFileWrapper
-from typing import List, Literal
+from typing import Generator, List, Literal
 
 from bs4 import BeautifulSoup
 from ebooklib.epub import EpubBook
@@ -23,7 +23,7 @@ class AbstractGenerator:
         metadata: Story,
         part_trees: List[BeautifulSoup],
         cover: bytes,
-        images: List[List[bytes]] | None,
+        images: List[Generator[bytes]] | None,
     ):
         self.story = metadata
         self.parts = part_trees
