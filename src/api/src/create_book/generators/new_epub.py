@@ -21,7 +21,7 @@ class EPUBGenerator(AbstractGenerator):
         self.cover = cover
         self.images = images
 
-        self.book = epub.EpubBook()
+        self.book: epub.EpubBook = epub.EpubBook()
 
     def add_metadata(self):
         """Add metadata to epub."""
@@ -87,11 +87,11 @@ class EPUBGenerator(AbstractGenerator):
         self.book.toc = chapters
 
         # Thanks https://github.com/aerkalov/ebooklib/blob/master/samples/09_create_image/create.py
-        self.epub.add_item(epub.EpubNcx())
-        self.epub.add_item(epub.EpubNav())
+        self.book.add_item(epub.EpubNcx())
+        self.book.add_item(epub.EpubNav())
 
         # create spine
-        self.epub.spine = ["nav"] + chapters
+        self.book.spine = ["nav"] + chapters
 
     def compile(self):
         self.add_metadata()
