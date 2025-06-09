@@ -1,6 +1,7 @@
-from .config import Config, CacheTypes
 from aiohttp_client_cache import FileBackend, RedisBackend
 from dotenv import load_dotenv
+
+from .config import CacheTypes, Config
 from .logs import logger
 
 headers = {

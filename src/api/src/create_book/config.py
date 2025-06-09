@@ -1,5 +1,6 @@
 from enum import Enum
-from pydantic import model_validator, field_validator
+
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 

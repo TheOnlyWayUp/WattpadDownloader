@@ -1,8 +1,10 @@
 import re
-import bs4
 import unicodedata
-from bs4 import BeautifulSoup
 from typing import cast
+
+import bs4
+from bs4 import BeautifulSoup
+
 from .models import Part
 
 

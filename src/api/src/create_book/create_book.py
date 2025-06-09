@@ -1,15 +1,18 @@
 from __future__ import annotations
-from typing import Optional, Tuple
+
 from io import BytesIO
+from typing import Optional, Tuple
+
 import backoff
-from pydantic import TypeAdapter
-from .logs import logger
-from eliot import start_action
 from aiohttp import ClientResponseError
 from aiohttp_client_cache.session import CachedSession
-from .models import Story
+from eliot import start_action
+from pydantic import TypeAdapter
+
 from .exceptions import PartNotFoundError, StoryNotFoundError
-from .vars import headers, cache
+from .logs import logger
+from .models import Story
+from .vars import cache, headers
 
 story_ta = TypeAdapter(Story)
 

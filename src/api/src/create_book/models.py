@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, List
+from typing import List, Optional, TypedDict
 
 
 class CopyrightData(TypedDict):

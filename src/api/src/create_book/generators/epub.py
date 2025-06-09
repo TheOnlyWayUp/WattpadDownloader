@@ -1,9 +1,11 @@
-from ebooklib import epub
-from typing import List
-from ..models import Story
 from io import BytesIO
+from typing import List
+
 import bs4
 from aiohttp_client_cache.session import CachedSession
+from ebooklib import epub
+
+from ..models import Story
 
 headers = {}
 

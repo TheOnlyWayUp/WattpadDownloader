@@ -1,19 +1,22 @@
+import asyncio
+from itertools import batched, chain
 from typing import List, Tuple
+
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup, Tag
-from itertools import batched, chain
-
-import asyncio
-from .vars import headers
 from eliot import start_action
+
+from .vars import headers
 
 
 def clean_tree(title: str, id: int, body: str) -> BeautifulSoup:
     original_soup = BeautifulSoup(body)
-    new_soup = BeautifulSoup("""
+    new_soup = BeautifulSoup(
+        """
     <h1 class="chapter-name" id={id}>{title}</h1>
     <section class="chapter-body"></section>
-""")
+"""
+    )
 
     insert_at = new_soup.find("section")
 

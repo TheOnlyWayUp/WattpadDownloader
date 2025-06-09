@@ -1,16 +1,18 @@
-from typing import List, cast
 import tempfile
 from base64 import b64encode
-import bs4
-from weasyprint import HTML, CSS
-from weasyprint.text.fonts import FontConfiguration
-from exiftool import ExifTool
-from ..logs import exiftool_logger
-from bs4 import BeautifulSoup
-from ..utils import smart_trim
-from ..models import Story
-from eliot import start_action
 from io import BytesIO
+from typing import List, cast
+
+import bs4
+from bs4 import BeautifulSoup
+from eliot import start_action
+from exiftool import ExifTool
+from weasyprint import CSS, HTML
+from weasyprint.text.fonts import FontConfiguration
+
+from ..logs import exiftool_logger
+from ..models import Story
+from ..utils import smart_trim
 
 
 async def fetch_image(*args, **kwargs):

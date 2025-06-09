@@ -1,12 +1,13 @@
 """WattpadDownloader API Server."""
 
-from typing import Optional
 import asyncio
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
+from typing import Optional
 from zipfile import ZipFile
-from eliot import start_action
+
 from aiohttp import ClientResponseError
+from eliot import start_action
 from fastapi import FastAPI, Request
 from fastapi.responses import (
     FileResponse,
@@ -15,20 +16,20 @@ from fastapi.responses import (
     StreamingResponse,
 )
 from fastapi.staticfiles import StaticFiles
+
 from create_book import (
     EPUBGenerator,
-    fetch_story,
-    fetch_story_from_partId,
-    fetch_story_content_zip,
-    fetch_image,
-    fetch_cookies,
-    WattpadError,
     StoryNotFoundError,
+    WattpadError,
+    fetch_cookies,
+    fetch_image,
+    fetch_story,
+    fetch_story_content_zip,
+    fetch_story_from_partId,
     generate_clean_part_html,
-    slugify,
     logger,
+    slugify,
 )
-
 
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
