@@ -181,8 +181,8 @@ async def handle_download(
             for part in metadata["parts"]
         ]
 
-        if download_images:
-            images = [await download_tree_images(tree) for tree in part_trees]
+        # download_images:
+        images = [await download_tree_images(tree) for tree in part_trees] if download_images else None
 
         match format:
             case DownloadFormat.epub:
