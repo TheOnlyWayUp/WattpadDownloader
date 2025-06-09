@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
-from typing import Optional, Tuple
+from typing import Optional
 
 import backoff
 from aiohttp import ClientResponseError
@@ -63,7 +63,7 @@ async def fetch_cookies(username: str, password: str) -> dict:
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_story_from_partId(
     part_id: int, cookies: Optional[dict] = None
-) -> Tuple[int, Story]:
+) -> tuple[int, Story]:
     """Fetch Story metadata from a Part ID."""
     with start_action(action_type="api_fetch_storyFromPartId"):
         async with CachedSession(

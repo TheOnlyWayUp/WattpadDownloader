@@ -1,11 +1,5 @@
 import re
 import unicodedata
-from typing import cast
-
-import bs4
-from bs4 import BeautifulSoup
-
-from .models import Part
 
 
 def slugify(value, allow_unicode=False) -> str:

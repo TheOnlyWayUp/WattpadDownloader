@@ -1,4 +1,4 @@
-from typing import List, Optional, TypedDict
+from typing import Optional, TypedDict
 
 
 class CopyrightData(TypedDict):
@@ -34,9 +34,9 @@ class Story(TypedDict):
     description: str
     cover: str
     completed: bool
-    tags: List[str]
+    tags: list[str]
     mature: bool
     url: str
-    parts: List[Part]
+    parts: list[Part]
     isPaywalled: bool
     copyright: int
