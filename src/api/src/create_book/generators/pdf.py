@@ -2,9 +2,8 @@ from base64 import b64encode
 from io import BytesIO
 from pathlib import Path
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
-from typing import Generator, List, cast
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 from exiftool import ExifTool
 from jinja2 import Template
 from weasyprint import CSS, HTML
@@ -87,9 +86,9 @@ class PDFGenerator(AbstractGenerator):
     def __init__(
         self,
         metadata: Story,
-        part_trees: List[BeautifulSoup],
+        part_trees: list[BeautifulSoup],
         cover: bytes,
-        images: List[Generator[bytes]] | None,
+        images: list[list[bytes | None]],
         author_image: bytes,
     ):
         self.story = metadata
@@ -109,6 +108,9 @@ class PDFGenerator(AbstractGenerator):
                 for img_idx, (img_data, img_tag) in enumerate(
                     zip(self.images[idx], tree.find_all("img"))
                 ):
+                    if not img_data:
+                        continue
+
                     img_tag["src"] = (
                         f"data:image/jpg;base64,{b64encode(img_data).decode()}"
                     )

@@ -1,6 +1,6 @@
 from io import BytesIO
 from tempfile import _TemporaryFileWrapper
-from typing import Generator, List, Literal
+from typing import Literal
 
 from bs4 import BeautifulSoup
 from ebooklib.epub import EpubBook
@@ -15,15 +15,15 @@ class AbstractGenerator:
         metadata (Story): Story Metadata.
         part_trees (List[BeautifulSoup]): Parsed part trees.
         cover (bytes): Cover image.
-        images (List[List[bytes]] | None): An array of images for each chapter, if images have been downloaded.
+        images (List[List[bytes | None]]): An array of images for each chapter, if images have been downloaded.
     """
 
     def __init__(
         self,
         metadata: Story,
-        part_trees: List[BeautifulSoup],
+        part_trees: list[BeautifulSoup],
         cover: bytes,
-        images: List[Generator[bytes]] | None,
+        images: list[list[bytes | None]],
     ):
         self.story = metadata
         self.parts = part_trees

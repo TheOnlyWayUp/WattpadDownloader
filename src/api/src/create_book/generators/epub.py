@@ -1,5 +1,4 @@
 from io import BytesIO
-from typing import Generator, List
 
 from bs4 import BeautifulSoup
 from ebooklib import epub
@@ -12,9 +11,9 @@ class EPUBGenerator(AbstractGenerator):
     def __init__(
         self,
         metadata: Story,
-        part_trees: List[BeautifulSoup],
+        part_trees: list[BeautifulSoup],
         cover: bytes,
-        images: List[Generator[bytes]] | None,
+        images: list[list[bytes | None]],
     ):
         self.story = metadata
         self.parts = part_trees

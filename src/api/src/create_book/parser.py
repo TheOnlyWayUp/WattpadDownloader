@@ -1,6 +1,6 @@
 import asyncio
-from itertools import batched, chain
-from typing import Generator, List, Tuple, cast
+from itertools import batched
+from typing import cast
 
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup, Tag
@@ -74,11 +74,13 @@ async def fetch_image(url: str) -> bytes | None:
         return body
 
 
-async def download_tree_images(tree: BeautifulSoup) -> Generator[bytes]:
+async def fetch_tree_images(tree: BeautifulSoup):
     """Return a Generator of bytes containing image data for all images referenced in the tree."""
     image_urls = [img["src"] for img in tree.find_all("img")]
-    downloaded_images: Generator[bytes] = chain(
-        await asyncio.gather(*[fetch_image(url) for url in chunk])
-        for chunk in batched(image_urls, 3)
-    )
-    return downloaded_images
+
+    images = []
+    for chunk in batched(image_urls, 3):
+        for image_data in await asyncio.gather(*[fetch_image(url) for url in chunk]):
+            images.append(image_data)
+
+    return images

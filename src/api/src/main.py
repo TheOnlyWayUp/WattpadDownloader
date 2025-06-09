@@ -31,7 +31,7 @@ from create_book import (
     logger,
     slugify,
 )
-from create_book.parser import clean_tree, download_tree_images
+from create_book.parser import clean_tree, fetch_tree_images
 
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
@@ -181,8 +181,11 @@ async def handle_download(
             for part in metadata["parts"]
         ]
 
-        # download_images:
-        images = [await download_tree_images(tree) for tree in part_trees] if download_images else None
+        images = (
+            [await fetch_tree_images(tree) for tree in part_trees]
+            if download_images
+            else []
+        )
 
         match format:
             case DownloadFormat.epub:
