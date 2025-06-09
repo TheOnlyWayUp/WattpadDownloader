@@ -46,13 +46,14 @@ id="copyright-license-image">
         <section id="contents" class="toc">
             <h1>Table of Contents</h1>
             <ul>
-                {% for part_id in part_ids %}
+                {% for part_id in parts %}
                     <li><a href="#{{part_id}}"></a></li>
                 {% endfor %}
             </ul>
             </section>
-        {% for part_html in part_htmls %}
-            {{part_html | safe}}
+            {% for part_id in parts %}
+
+            {{parts[part_id] | safe}}
         {% endfor %}
     </div>
 

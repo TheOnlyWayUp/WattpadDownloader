@@ -111,9 +111,9 @@ class PDFGenerator(AbstractGenerator):
                     if not img_data:
                         continue
 
-                    img_tag["src"] = (
-                        f"data:image/jpg;base64,{b64encode(img_data).decode()}"
-                    )
+                    img_tag[
+                        "src"
+                    ] = f"data:image/jpg;base64,{b64encode(img_data).decode()}"
 
             data[part["id"]] = tree.prettify()
 
