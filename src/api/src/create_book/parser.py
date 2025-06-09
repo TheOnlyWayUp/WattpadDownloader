@@ -75,6 +75,7 @@ async def fetch_image(url: str) -> bytes | None:
 
 
 async def download_tree_images(tree: BeautifulSoup) -> Generator[bytes]:
+    """Return a Generator of bytes containing image data for all images referenced in the tree."""
     image_urls = [img["src"] for img in tree.find_all("img")]
     downloaded_images: Generator[bytes] = chain(
         await asyncio.gather(*[fetch_image(url) for url in chunk])

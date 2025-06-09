@@ -10,4 +10,4 @@ from .exceptions import PartNotFoundError, StoryNotFoundError, WattpadError
 from .generators import EPUBGenerator, PDFGenerator
 from .logs import logger
 from .parser import fetch_image
-from .utils import generate_clean_part_html, slugify
+from .utils import slugify
