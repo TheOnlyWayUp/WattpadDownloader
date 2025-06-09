@@ -1,5 +1,5 @@
 from io import BytesIO
-from tempfile import NamedTemporaryFile
+from tempfile import _TemporaryFileWrapper
 from typing import List, Literal
 
 from bs4 import BeautifulSoup
@@ -30,7 +30,7 @@ class AbstractGenerator:
         self.cover = cover
         self.images = images
 
-        self.book: EpubBook | NamedTemporaryFile = None
+        self.book: EpubBook | _TemporaryFileWrapper = None  # type: ignore
 
     def compile(self) -> Literal[True]:
         """Compile the part trees into the corresponding in-memory representation of the generator format.
