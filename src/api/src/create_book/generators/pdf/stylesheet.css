@@ -389,6 +389,14 @@ a:hover {
 
 }
 
+#book-link {
+  font-size: 14px;
+  color: #666;
+  margin: 8px 0;
+  text-align: center;
+
+}
+
 #copyright-separator {
   width: 100%;
   max-width: 400px;
