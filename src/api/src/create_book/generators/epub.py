@@ -64,7 +64,7 @@ class EPUBGenerator(AbstractGenerator):
 
         for idx, (part, tree) in enumerate(zip(self.story["parts"], self.parts)):
             chapter = epub.EpubHtml(
-                title=part["title"], file_name=f"{idx}_{part['id']}"
+                title=part["title"], file_name=f"{idx}_{part['id']}.xhtml"
             )
 
             if self.images:
