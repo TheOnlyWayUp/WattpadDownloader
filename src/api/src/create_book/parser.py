@@ -10,13 +10,14 @@ from .vars import headers
 
 
 def clean_tree(title: str, id: int, body: str) -> BeautifulSoup:
-    original_soup = BeautifulSoup(body)
+    original_soup = BeautifulSoup(body, features="lxml")
     new_soup = BeautifulSoup(
         f"""
     <h1 class="chapter-title" id={id}>{title}</h1>
     <section class="chapter-body"></section>
 """,
         parser="html.parser",  # head/body tags aren't generated
+        features="lxml",
     )
 
     insert_at = cast(Tag, new_soup.find("section"))
