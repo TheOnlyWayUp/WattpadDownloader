@@ -111,9 +111,9 @@ class PDFGenerator(AbstractGenerator):
                     if not img_data:
                         continue
 
-                    img_tag[
-                        "src"
-                    ] = f"data:image/jpg;base64,{b64encode(img_data).decode()}"
+                    img_tag["src"] = (
+                        f"data:image/jpg;base64,{b64encode(img_data).decode()}"
+                    )
 
             data[part["id"]] = tree.prettify()
 
@@ -137,9 +137,11 @@ class PDFGenerator(AbstractGenerator):
             "description": self.story["description"],
             "avatar": b64encode(self.author).decode(),
             "copyright": {
-                "data": b64encode(copyright["asset"].read_bytes()).decode()
-                if copyright["asset"]
-                else "",
+                "data": (
+                    b64encode(copyright["asset"].read_bytes()).decode()
+                    if copyright["asset"]
+                    else ""
+                ),
                 "name": copyright["name"],
             },
             "parts": parts,
