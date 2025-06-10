@@ -25,7 +25,6 @@ def clean_tree(title: str, id: int, body: str) -> BeautifulSoup:
     children = cast(Tag, original_soup.find("body")).children
     for tag in cast(list[Tag], list(children)):
         if tag.name != "p":  # Casted to lower
-            print(tag.name)
             continue
 
         style = tag.attrs.get("style")
