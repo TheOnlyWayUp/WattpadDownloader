@@ -31,7 +31,7 @@ def clean_tree(title: str, id: int, body: str) -> BeautifulSoup:
         for child in cast(list[Tag], tag.children):
             # tag is a <p> enclosing either text, media, or a break
 
-            if child.name in [None, "b", "i", "u"]:
+            if child.name in [None, "b", "i", "u","strong","em"]:
                 # text is enclosed, can be italic, bold, underlined, or a mix
                 tag.attrs = {}
                 p_tag = tag
