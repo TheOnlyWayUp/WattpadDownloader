@@ -1,13 +1,15 @@
 """WattpadDownloader API Server."""
 
-from typing import Optional
 import asyncio
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
+from typing import Optional
 from zipfile import ZipFile
-from eliot import start_action
+
 from aiohttp import ClientResponseError
-from fastapi import FastAPI, Request
+from bs4 import BeautifulSoup
+from eliot import start_action
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -15,28 +17,24 @@ from fastapi.responses import (
     StreamingResponse,
 )
 from fastapi.staticfiles import StaticFiles
+
 from create_book import (
     EPUBGenerator,
     PDFGenerator,
-    fetch_story,
-    fetch_story_from_partId,
-    fetch_story_content_zip,
-    fetch_image,
-    fetch_cookies,
-    WattpadError,
     StoryNotFoundError,
-    generate_clean_part_html,
-    slugify,
+    WattpadError,
+    fetch_cookies,
+    fetch_image,
+    fetch_story,
+    fetch_story_content_zip,
+    fetch_story_from_partId,
     logger,
+    slugify,
 )
-
+from create_book.parser import clean_tree, fetch_tree_images
 
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
-
-headers = {
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
-}
 
 
 class RequestCancelledMiddleware:
@@ -77,7 +75,7 @@ app.add_middleware(RequestCancelledMiddleware)
 
 
 class DownloadFormat(Enum):
-    # pdf = "pdf"
+    pdf = "pdf"
     epub = "epub"
 
 
@@ -170,31 +168,44 @@ async def handle_download(
         cover_data = await fetch_image(
             metadata["cover"].replace("-256-", "-512-")
         )  # Increase resolution
-
-        match format:
-            case DownloadFormat.epub:
-                book = EPUBGenerator(metadata, cover_data)
-                media_type = "application/epub+zip"
-            # case DownloadFormat.pdf:
-            #     book = PDFGenerator(metadata, cover_data)
-            #     media_type = "application/pdf"
-
-        logger.info(f"Retrieved story metadata and cover ({story_id=})")
+        if not cover_data:
+            raise HTTPException(status_code=422)
 
         story_zip = await fetch_story_content_zip(story_id, cookies)
         archive = ZipFile(story_zip, "r")
 
-        part_contents = [
-            generate_clean_part_html(
-                part, archive.read(str(part["id"])).decode("utf-8")
+        part_trees: list[BeautifulSoup] = [
+            clean_tree(
+                part["title"], part["id"], archive.read(str(part["id"])).decode("utf-8")
             )
             for part in metadata["parts"]
         ]
 
-        async for title in book.add_chapters(
-            part_contents, download_images=download_images
-        ):
-            ...
+        images = (
+            [await fetch_tree_images(tree) for tree in part_trees]
+            if download_images
+            else []
+        )
+
+        match format:
+            case DownloadFormat.epub:
+                book = EPUBGenerator(metadata, part_trees, cover_data, images)
+                media_type = "application/epub+zip"
+            case DownloadFormat.pdf:
+                author_image = await fetch_image(
+                    metadata["user"]["avatar"].replace("-256-", "-512-")
+                )
+                if not author_image:
+                    raise HTTPException(status_code=422)
+
+                book = PDFGenerator(
+                    metadata, part_trees, cover_data, images, author_image
+                )
+                media_type = "application/pdf"
+
+        logger.info(f"Retrieved story metadata and cover ({story_id=})")
+
+        book.compile()
 
         book_buffer = book.dump()
 

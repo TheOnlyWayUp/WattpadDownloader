@@ -205,6 +205,8 @@ section {
 #contents a {
   color: inherit;
   text-decoration: none;
+  display: flex;
+  justify-content: space-between;
 }
 #contents a::before {
   content: target-counter(attr(href), h2-counter) '. ' target-text(attr(href));
@@ -386,6 +388,14 @@ a:hover {
     color: #666;
     margin: 8px 0;
     text-align: center;
+
+}
+
+#book-link {
+  font-size: 14px;
+  color: #666;
+  margin: 8px 0;
+  text-align: center;
 
 }
 

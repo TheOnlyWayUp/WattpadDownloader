@@ -9,7 +9,7 @@ COPY src/frontend/. .
 RUN npm run build
 # Thanks https://stackoverflow.com/q/76988450
 
-FROM python:3.10-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
@@ -38,7 +38,7 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 COPY src/api/requirements.txt requirements.txt
-COPY src/api/exiftool.config exiftool.config
+COPY src/api/src/create_book/generators/pdf/exiftool.config exiftool.config
 RUN uv pip install -r requirements.txt --system
 COPY --from=0 /build/build /app/src/build
 COPY src/api/src src
