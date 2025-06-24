@@ -2,6 +2,7 @@
 
 import asyncio
 from enum import Enum
+from os import getenv
 from pathlib import Path
 from typing import Optional
 from zipfile import ZipFile
@@ -17,7 +18,6 @@ from fastapi.responses import (
     StreamingResponse,
 )
 from fastapi.staticfiles import StaticFiles
-from os import getenv
 
 from create_book import (
     EPUBGenerator,
@@ -37,7 +37,7 @@ from create_book.parser import clean_tree, fetch_tree_images
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
 
-feature_flag = True if getenv("VITE_FEATURE_FLAG") == "true" else False
+PDFS_ENABLED = True if getenv("VITE_ENABLE_PDFS") == "true" else False
 
 
 class RequestCancelledMiddleware:
@@ -195,7 +195,7 @@ async def handle_download(
                 book = EPUBGenerator(metadata, part_trees, cover_data, images)
                 media_type = "application/epub+zip"
             case DownloadFormat.pdf:
-                if not feature_flag:
+                if not PDFS_ENABLED:
                     logger.error("PDF downloads not enabled.")
                     return HTMLResponse(
                         status_code=403,
@@ -224,7 +224,7 @@ async def handle_download(
                 yield chunk
 
         return StreamingResponse(
-            book_buffer if feature_flag else iterfile(),
+            book_buffer if PDFS_ENABLED else iterfile(),
             media_type=media_type,
             headers={
                 "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"',  # Thanks https://stackoverflow.com/a/72729058

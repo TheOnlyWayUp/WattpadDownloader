@@ -7,8 +7,8 @@ RUN rm -rf build
 RUN npm install
 COPY src/frontend/. .
 
-ARG feature_flag=false
-ENV VITE_FEATURE_FLAG=$feature_flag
+ARG pdfs=false
+ENV VITE_ENABLE_PDFS=$pdfs
 
 RUN npm run build
 # Thanks https://stackoverflow.com/q/76988450

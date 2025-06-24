@@ -1,5 +1,5 @@
 <script>
-  const featureFlag = import.meta.env.VITE_FEATURE_FLAG === "true";
+  const PDFS_ENABLED = import.meta.env.VITE_ENABLE_PDFS === "true";
 
   let downloadImages = $state(false);
   let downloadAsPdf = $state(false); // 0 = epub, 1 = pdf
@@ -112,7 +112,7 @@
           >
             WP Downloader
           </h1>
-          {#if !featureFlag}
+          {#if !PDFS_ENABLED}
             <div role="alert" class="alert mt-10 max-w-md break-words bg-green-200">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -160,7 +160,7 @@
           <ul class="list list-inside pt-4 text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
             <li>05/25 - ⚖️ Legal Compliance</li>
-            {#if featureFlag}
+            {#if PDFS_ENABLED}
               <li>12/24 - ⚡ Super-fast Downloads!</li>
               <li>12/24 - 📑 PDF Downloads!</li>
             {:else}
@@ -259,7 +259,7 @@
               >
             </div>
 
-            {#if featureFlag}
+            {#if PDFS_ENABLED}
               <label class="swap w-fit label mt-2 pb-2">
                 <input type="checkbox" bind:checked={downloadAsPdf} />
                 <div class="swap-on absolute left-0 text-gray-800">
