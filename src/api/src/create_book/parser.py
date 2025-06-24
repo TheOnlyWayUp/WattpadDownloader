@@ -5,6 +5,7 @@ from typing import cast
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup, Tag
 from eliot import start_action
+from urllib.parse import urlparse
 
 from .vars import headers
 
@@ -76,7 +77,12 @@ async def fetch_image(url: str) -> bytes | None:
 
 async def fetch_tree_images(tree: BeautifulSoup):
     """Return a Generator of bytes containing image data for all images referenced in the tree."""
-    image_urls = [img["src"] for img in tree.find_all("img")]
+
+    image_urls = []
+    for img in tree.find_all("img"):
+        parsed = urlparse(img["src"])
+        if parsed.scheme and parsed.netloc: # Test if valid URL
+            image_urls.append(img["src"])
 
     images = []
     for chunk in batched(image_urls, 3):
