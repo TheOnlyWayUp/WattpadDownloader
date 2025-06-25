@@ -1,4 +1,6 @@
 <script>
+  const PDFS_ENABLED = import.meta.env.VITE_ENABLE_PDFS === "true";
+
   let downloadImages = $state(false);
   let downloadAsPdf = $state(false); // 0 = epub, 1 = pdf
   let isPaidStory = $state(false);
@@ -110,29 +112,32 @@
           >
             WP Downloader
           </h1>
-          <div role="alert" class="alert mt-10 max-w-md break-words bg-green-200">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              class="h-6 w-6 shrink-0 stroke-current"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
-            </svg>
-            <div>
-              <p>
-                Donators get access to <span class="font-semibold">high-speed PDF Downloads</span>
-              </p>
-              <a href="https://buymeacoffee.com/theonlywayup" class="link" target="_blank"
-                >Donate now</a
+          {#if !PDFS_ENABLED}
+            <div role="alert" class="alert mt-10 max-w-md break-words bg-green-200">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                class="h-6 w-6 shrink-0 stroke-current"
               >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+
+              <div>
+                <p>
+                  Donators get access to <span class="font-semibold">high-speed PDF Downloads</span>
+                </p>
+                <a href="https://buymeacoffee.com/theonlywayup" class="link" target="_blank"
+                  >Donate now</a
+                >
+              </div>
             </div>
-          </div>
+          {/if}
           <!-- <div role="alert" class="alert bg-cyan-300 mt-5">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -154,10 +159,13 @@
           </p>
           <ul class="list list-inside pt-4 text-xl">
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
-            <!-- <li>12/24 - ⚡ Super-fast Downloads!</li>
-            <li>12/24 - 📑 PDF Downloads!</li> -->
             <li>05/25 - ⚖️ Legal Compliance</li>
-            <li>12/24 - 📂 Less Errors, Throttled Downloads</li>
+            {#if PDFS_ENABLED}
+              <li>12/24 - ⚡ Super-fast Downloads!</li>
+              <li>12/24 - 📑 PDF Downloads!</li>
+            {:else}
+              <li>12/24 - 📂 Less Errors, Throttled Downloads</li>
+            {/if}
             <li>11/24 - 🔗 Paste Links!</li>
             <li>11/24 - 📨 Send to Kindle Support!</li>
 
@@ -249,26 +257,30 @@
                 href={url}
                 onclick={() => (afterDownloadPage = true)}>Download</a
               >
+            </div>
 
-              <!-- <label class="swap w-fit label mt-2">
+            {#if PDFS_ENABLED}
+              <label class="swap w-fit label mt-2 pb-2">
                 <input type="checkbox" bind:checked={downloadAsPdf} />
-                <div class="swap-on">
+                <div class="swap-on absolute left-0 text-gray-800">
                   Downloading as <span class=" underline text-bold">PDF</span> (Click)
                 </div>
-                <div class="swap-off">
+                <div class="swap-off absolute left-0 text-gray-800">
                   Downloading as <span class=" underline text-bold">EPUB</span> (Click)
                 </div>
-              </label> -->
-
-              <label class="label cursor-pointer">
-                <span class="label-text text-gray-800">Include Images (<strong>Slower Download</strong>)</span>
-                <input
-                  type="checkbox"
-                  class="checkbox-warning checkbox shadow-md"
-                  bind:checked={downloadImages}
-                />
               </label>
-            </div>
+            {/if}
+
+            <label class="label cursor-pointer">
+              <span class="label-text text-gray-800"
+                >Include Images (<strong>Slower Download</strong>)</span
+              >
+              <input
+                type="checkbox"
+                class="checkbox-warning checkbox shadow-md"
+                bind:checked={downloadImages}
+              />
+            </label>
           </form>
         </div>
       {:else}
