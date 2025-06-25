@@ -2,6 +2,7 @@ from io import BytesIO
 
 from bs4 import BeautifulSoup
 from ebooklib import epub
+from re import sub
 
 from ..models import Story
 from .types import AbstractGenerator
@@ -63,7 +64,7 @@ class EPUBGenerator(AbstractGenerator):
 
         for idx, (part, tree) in enumerate(zip(self.story["parts"], self.parts)):
             chapter = epub.EpubHtml(
-                title=part["title"], file_name=f"{idx}_{part['id']}.xhtml"
+                title=sub(r'[\x00-\x1F\x7F]', '', part["title"]), file_name=f"{idx}_{part['id']}.xhtml" # Removes control characters from chapter title
             )
 
             if self.images:
