@@ -196,10 +196,10 @@ async def handle_download(
                 media_type = "application/epub+zip"
             case DownloadFormat.pdf:
                 if not PDFS_ENABLED:
-                    logger.error("PDF downloads not enabled.")
+                    logger.error("PDF Downloads not enabled.")
                     return HTMLResponse(
                         status_code=403,
-                        content='PDF downloads have been disabled by the server administrator. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+                        content='PDF Downloads have been disabled by the server administrator. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
                     )
                 author_image = await fetch_image(
                     metadata["user"]["avatar"].replace("-256-", "-512-")
