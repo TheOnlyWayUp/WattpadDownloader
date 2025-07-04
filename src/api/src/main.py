@@ -120,6 +120,15 @@ def download_wp_error_handler(request: Request, exception: WattpadError):
         )
 
 
+# Handles #78
+@app.exception_handler(KeyError)
+def download_key_error_handler(request: Request, exception: KeyError):
+    return HTMLResponse(
+        status_code=500,
+        content='Encountered a KeyError. This is most likely a cache issue. Try again later or use login credentials. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+    )
+
+
 @app.get("/download/{download_id}")
 async def handle_download(
     download_id: int,
