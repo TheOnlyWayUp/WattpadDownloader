@@ -218,7 +218,8 @@ async def handle_download(
             iterfile(),
             media_type=media_type,
             headers={
-                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"'  # Thanks https://stackoverflow.com/a/72729058
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"',  # Thanks https://stackoverflow.com/a/72729058
+                "Content-Length": str(book_buffer.getbuffer().nbytes),
             },
         )
 
