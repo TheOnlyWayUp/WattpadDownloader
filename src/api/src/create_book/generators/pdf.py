@@ -4,7 +4,6 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
 
 from bs4 import BeautifulSoup
-from exiftool import ExifTool
 from jinja2 import Template
 from weasyprint import CSS, HTML
 from weasyprint.text.fonts import FontConfiguration
@@ -134,6 +133,12 @@ class PDFGenerator(AbstractGenerator):
             "book_title": self.story["title"],
             "cover": f"data:image/jpg;base64,{b64encode(self.cover).decode()}",
             "username": self.story["user"]["username"],
+            "author_bio": self.story["user"]["description"],
+            "tags": self.story["tags"],
+            "created": self.story["createDate"],
+            "modified": self.story["modifyDate"],
+            "is_completed": self.story["completed"],
+            "is_mature": self.story["mature"],
             "description": self.story["description"],
             "avatar": b64encode(self.author).decode(),
             "copyright": {
@@ -160,44 +165,10 @@ class PDFGenerator(AbstractGenerator):
             self.book.name, stylesheets=[stylesheet_obj], font_config=font_config
         )
 
-    def add_metadata(self):
-        """Write metadata to generated PDF file at self.book, using ExifTool."""
-
-        clean_description = (
-            self.story["description"].strip().replace("\n", "$/")
-        )  # exiftool doesn't parse \ns correctly, they support $/ for the same instead. `&#xa;` is another option.
-
-        metadata = {
-            "Author": self.story["user"]["username"],
-            "Title": self.story["title"],
-            "Subject": clean_description,
-            "CreationDate": self.story["createDate"],
-            "ModDate": self.story["modifyDate"],
-            "Keywords": ",".join(self.story["tags"]),
-            "Language": self.story["language"]["name"],
-            "Completed": self.story["completed"],
-            "MatureContent": self.story["mature"],
-            "Producer": "Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader",
-        }  # As per https://exiftool.org/TagNames/PDF.html
-
-        with ExifTool(config_file=DATA_PATH / "exiftool.config") as et:
-            # Custom configuration adds Completed and MatureContent tags.
-            # exiftool logger logs executed command
-            et.execute(
-                *(
-                    [f"-{key}={value}" for key, value in metadata.items()]
-                    + [
-                        "-overwrite_original",
-                        self.book.file.name,
-                    ]
-                )
-            )
-
     def compile(self):
         parts = self.generate_chapters()
         self.populate_template(parts)
         self.generate_pdf()
-        self.add_metadata()
         return True
 
     def dump(self) -> BytesIO:
