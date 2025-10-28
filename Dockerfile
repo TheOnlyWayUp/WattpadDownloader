@@ -31,8 +31,9 @@ WORKDIR /app
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY src/api/ /app
+COPY src/api/pyproject.toml /app
 RUN uv sync
+COPY src/api/ /app
 COPY --from=0 /build/build /app/src/build
 
 RUN ln -s /app/src/pdf/fonts /tmp/fonts

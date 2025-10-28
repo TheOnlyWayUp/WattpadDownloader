@@ -11,3 +11,4 @@ build
 .venv
 .env
 *log
+uv.lock
