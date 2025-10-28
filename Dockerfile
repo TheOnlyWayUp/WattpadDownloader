@@ -21,6 +21,9 @@ RUN apt-fast install -y git build-essential python3.13-dev libgobject-2.0 libpan
 # aiohttp-client-cache depends on multipart, which requires python3.13-dev to build successfully on 3.13
 # weasyprint depends on libgoject, libpango, and libpangoft2
 
+RUN rm -rf /var/lib/apt/lists/*
+# https://github.com/TheOnlyWayUp/WattpadDownloader/pull/82#discussion_r2470358950
+
 
 WORKDIR /app
 
