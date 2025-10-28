@@ -96,7 +96,7 @@ class PDFGenerator(AbstractGenerator):
         self.images = images
         self.author = author_image
 
-        self.book: _TemporaryFileWrapper = NamedTemporaryFile(suffix=".pdf")
+        self.book: _TemporaryFileWrapper = NamedTemporaryFile(suffix=".pdf")  # type: ignore
         self.content = TEMPLATE
 
     def generate_chapters(self) -> dict[int, str]:
@@ -134,7 +134,7 @@ class PDFGenerator(AbstractGenerator):
             "cover": f"data:image/jpg;base64,{b64encode(self.cover).decode()}",
             "username": self.story["user"]["username"],
             "author_bio": self.story["user"]["description"],
-            "tags": self.story["tags"],
+            "clean_tags": ", ".join(self.story["tags"]),
             "created": self.story["createDate"],
             "modified": self.story["modifyDate"],
             "is_completed": self.story["completed"],
