@@ -3,9 +3,10 @@ from io import BytesIO
 from pathlib import Path
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
 
+import pydyf
 from bs4 import BeautifulSoup
 from jinja2 import Template
-from weasyprint import CSS, HTML
+from weasyprint import CSS, HTML, Document
 from weasyprint.text.fonts import FontConfiguration
 
 from ..models import Story
@@ -154,6 +155,11 @@ class PDFGenerator(AbstractGenerator):
 
         self.content: str = Template(self.content).render(data)
 
+    def write_custom_metadata(self, document: Document, pdf: pydyf.PDF):
+        """Write non-standard metadata fields to the PDF."""
+        pdf.info["completed"] = pydyf.String(str(self.story["completed"]))
+        pdf.info["mature"] = pydyf.String(str(self.story["mature"]))
+
     def generate_pdf(self):
         """Generate and write the PDF to a temporary file (self.book)."""
         font_config = FontConfiguration()
@@ -162,7 +168,11 @@ class PDFGenerator(AbstractGenerator):
 
         html_obj = HTML(string=self.content)
         html_obj.write_pdf(
-            self.book.name, stylesheets=[stylesheet_obj], font_config=font_config
+            self.book.name,
+            stylesheets=[stylesheet_obj],
+            font_config=font_config,
+            finisher=self.write_custom_metadata,
+            options={"custom_metadata": True},
         )
 
     def compile(self):

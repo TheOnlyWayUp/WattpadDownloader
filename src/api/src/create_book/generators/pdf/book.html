@@ -3,22 +3,19 @@
 
 
 <head>
-    <meta name=keywords content="{{clean_tags}}">
 
-    <title>{{ book_title }}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name=Subject content="{{description}}">
-    <meta name=Author content="{{author}}">
-    <meta name=Keywords content="{{tags}}">
-    <meta name=Language content="{{langcode}}">
-    <meta name=CreationDate content="{{created}}">
-    <meta name=ModDate content="{{modified}}">
-    <meta name=Generator content="Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader">
-
-    <meta name=completed content="{{is_completed}}">
-    <meta name=maturecontent content="{{is_mature}}">
+    <!-- https://doc.courtbouillon.org/weasyprint/stable/api_reference.html#weasyprint.document.DocumentMetadata -->
+    <title>{{ book_title }}</title>
+    <meta name=description content="{{description}}">
+    <meta name=author content="{{author}}">
+    <meta name=keywords content="{{clean_tags}}">
+    <meta name=language content="{{langcode}}">
+    <meta name=dcterms.created content="{{created}}">
+    <meta name=dcterms.modified content="{{modified}}">
+    <meta name=generator content="Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader">
 
 
 </head>
