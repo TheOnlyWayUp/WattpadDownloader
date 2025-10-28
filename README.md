@@ -53,5 +53,5 @@ My thanks to [aerkalov/ebooklib](https://github.com/aerkalov/ebooklib) for a fas
 ---
 
 <div align="center">
-    <p>TheOnlyWayUp © 2024</p>
+    <p>TheOnlyWayUp © 2025</p>
 </div>
