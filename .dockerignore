@@ -7,3 +7,4 @@ build
 .env
 *log
 *.md
+uv.lock
