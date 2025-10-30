@@ -6,6 +6,10 @@ RUN rm -rf node_modules
 RUN rm -rf build
 RUN npm install
 COPY src/frontend/. .
+
+ARG pdfs=false
+ENV VITE_ENABLE_PDFS=$pdfs
+
 RUN npm run build
 # Thanks https://stackoverflow.com/q/76988450
 
@@ -39,6 +43,9 @@ COPY --from=0 /build/build /app/src/build
 RUN ln -s /app/src/pdf/fonts /tmp/fonts
 
 WORKDIR /app/src
+
+ARG pdfs=false
+ENV VITE_ENABLE_PDFS=$pdfs
 
 EXPOSE 80
 

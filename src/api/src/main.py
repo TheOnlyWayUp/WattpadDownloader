@@ -2,6 +2,7 @@
 
 import asyncio
 from enum import Enum
+from os import getenv
 from pathlib import Path
 from typing import Optional
 from zipfile import ZipFile
@@ -35,6 +36,8 @@ from create_book.parser import clean_tree, fetch_tree_images
 
 app = FastAPI()
 BUILD_PATH = Path(__file__).parent / "build"
+
+PDFS_ENABLED = True if getenv("VITE_ENABLE_PDFS") == "true" else False
 
 
 class RequestCancelledMiddleware:
@@ -158,6 +161,13 @@ async def handle_download(
         else:
             cookies = None
 
+        if format == DownloadFormat.pdf and not PDFS_ENABLED:
+            logger.error("PDF Downloads not enabled.")
+            return HTMLResponse(
+                status_code=403,
+                content='PDF Downloads have been disabled by the server administrator. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
+
         match mode:
             case DownloadMode.story:
                 story_id = download_id
@@ -215,7 +225,7 @@ async def handle_download(
                 yield chunk
 
         return StreamingResponse(
-            iterfile(),
+            book_buffer if PDFS_ENABLED else iterfile(),
             media_type=media_type,
             headers={
                 "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"',  # Thanks https://stackoverflow.com/a/72729058
