@@ -3,10 +3,10 @@ from io import BytesIO
 from pathlib import Path
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
 
+import pydyf
 from bs4 import BeautifulSoup
-from exiftool import ExifTool
 from jinja2 import Template
-from weasyprint import CSS, HTML
+from weasyprint import CSS, HTML, Document
 from weasyprint.text.fonts import FontConfiguration
 
 from ..models import Story
@@ -97,7 +97,7 @@ class PDFGenerator(AbstractGenerator):
         self.images = images
         self.author = author_image
 
-        self.book: _TemporaryFileWrapper = NamedTemporaryFile(suffix=".pdf")
+        self.book: _TemporaryFileWrapper = NamedTemporaryFile(suffix=".pdf")  # type: ignore
         self.content = TEMPLATE
 
     def generate_chapters(self) -> dict[int, str]:
@@ -134,6 +134,12 @@ class PDFGenerator(AbstractGenerator):
             "book_title": self.story["title"],
             "cover": f"data:image/jpg;base64,{b64encode(self.cover).decode()}",
             "username": self.story["user"]["username"],
+            "author_bio": self.story["user"]["description"],
+            "clean_tags": ", ".join(self.story["tags"]),
+            "created": self.story["createDate"],
+            "modified": self.story["modifyDate"],
+            "is_completed": self.story["completed"],
+            "is_mature": self.story["mature"],
             "description": self.story["description"],
             "avatar": b64encode(self.author).decode(),
             "copyright": {
@@ -149,6 +155,11 @@ class PDFGenerator(AbstractGenerator):
 
         self.content: str = Template(self.content).render(data)
 
+    def write_custom_metadata(self, document: Document, pdf: pydyf.PDF):
+        """Write non-standard metadata fields to the PDF."""
+        pdf.info["completed"] = pydyf.String(str(self.story["completed"]))
+        pdf.info["mature"] = pydyf.String(str(self.story["mature"]))
+
     def generate_pdf(self):
         """Generate and write the PDF to a temporary file (self.book)."""
         font_config = FontConfiguration()
@@ -157,47 +168,17 @@ class PDFGenerator(AbstractGenerator):
 
         html_obj = HTML(string=self.content)
         html_obj.write_pdf(
-            self.book.name, stylesheets=[stylesheet_obj], font_config=font_config
+            self.book.name,
+            stylesheets=[stylesheet_obj],
+            font_config=font_config,
+            finisher=self.write_custom_metadata,
+            options={"custom_metadata": True},
         )
-
-    def add_metadata(self):
-        """Write metadata to generated PDF file at self.book, using ExifTool."""
-
-        clean_description = (
-            self.story["description"].strip().replace("\n", "$/")
-        )  # exiftool doesn't parse \ns correctly, they support $/ for the same instead. `&#xa;` is another option.
-
-        metadata = {
-            "Author": self.story["user"]["username"],
-            "Title": self.story["title"],
-            "Subject": clean_description,
-            "CreationDate": self.story["createDate"],
-            "ModDate": self.story["modifyDate"],
-            "Keywords": ",".join(self.story["tags"]),
-            "Language": self.story["language"]["name"],
-            "Completed": self.story["completed"],
-            "MatureContent": self.story["mature"],
-            "Producer": "Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader",
-        }  # As per https://exiftool.org/TagNames/PDF.html
-
-        with ExifTool(config_file=DATA_PATH / "exiftool.config") as et:
-            # Custom configuration adds Completed and MatureContent tags.
-            # exiftool logger logs executed command
-            et.execute(
-                *(
-                    [f"-{key}={value}" for key, value in metadata.items()]
-                    + [
-                        "-overwrite_original",
-                        self.book.file.name,
-                    ]
-                )
-            )
 
     def compile(self):
         parts = self.generate_chapters()
         self.populate_template(parts)
         self.generate_pdf()
-        self.add_metadata()
         return True
 
     def dump(self) -> BytesIO:

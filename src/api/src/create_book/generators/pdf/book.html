@@ -1,73 +1,85 @@
 <!DOCTYPE html>
 <html lang="{{ langcode }}">
 
+
+<head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
+    <!-- https://doc.courtbouillon.org/weasyprint/stable/api_reference.html#weasyprint.document.DocumentMetadata -->
     <title>{{ book_title }}</title>
+    <meta name=description content="{{description}}">
+    <meta name=author content="{{author}}">
+    <meta name=keywords content="{{clean_tags}}">
+    <meta name=language content="{{langcode}}">
+    <meta name=dcterms.created content="{{created}}">
+    <meta name=dcterms.modified content="{{modified}}">
+    <meta name=generator content="Dhanush Rambhatla (TheOnlyWayUp - https://rambhat.la) and WattpadDownloader">
 
-    <section class="fullpage">
-        <img src="{{ cover }}" alt="Cover">
+
+</head>
+
+<section class="fullpage">
+    <img src="{{ cover }}" alt="Cover">
+</section>
+
+<div id="copyright-container">
+    <h1 id="copyright-notice">Copyright Notice</h1>
+
+    <h2 id="copyright-title">{{ book_title }}</h2>
+    <p id="copyright-author">By {{ author }}</p>
+
+    <div id="copyright-separator"></div>
+
+    <p id="copyright-ex-libris">Ex Libris Sapientiae</p>
+
+    <div id="copyright-separator"></div>
+
+    {% if copyright.data %}
+    <img src="data:image/jpg;base64,{{copyright.data}}" alt="{{copyright.name}}" width="88" height="31"
+        id="copyright-license-image">
+    {% endif %}
+
+    <p id="copyright-copyright">{{ statement }}</p>
+
+    <p id="copyright-rights">{{ freedoms }}</p>
+
+    <p id="copyright-printing">Printing: {{ printing }}</p>
+
+    <p id="book-link">
+        ID: {{ book_id }}.
+        <a href="https://wattpad.com/story/{{ book_id }}" target="_blank" id="copyright-link">View this Book Online</a>
+    </p>
+</div>
+
+<div id="book">
+    <section id="contents" class="toc">
+        <h1>Table of Contents</h1>
+        <ul>
+            {% for part_id in parts %}
+            <li><a href="#{{part_id}}"></a></li>
+            {% endfor %}
+        </ul>
     </section>
+    {% for part_id in parts %}
 
-    <div id="copyright-container">
-        <h1 id="copyright-notice">Copyright Notice</h1>
-        
-        <h2 id="copyright-title">{{ book_title }}</h2>
-        <p id="copyright-author">By {{ author }}</p>
+    {{parts[part_id] | safe}}
+    {% endfor %}
+</div>
 
-        <div id="copyright-separator"></div>
-        
-        <p id="copyright-ex-libris">Ex Libris Sapientiae</p>
-        
-        <div id="copyright-separator"></div>
-
-        {% if copyright.data %}
-        <img src="data:image/jpg;base64,{{copyright.data}}" 
-alt="{{copyright.name}}" 
-width="88" 
-height="31" 
-id="copyright-license-image">
-        {% endif %}
-        
-        <p id="copyright-copyright">{{ statement }}</p>
-        
-        <p id="copyright-rights">{{ freedoms }}</p>
-        
-        <p id="copyright-printing">Printing: {{ printing }}</p>
-
-        <p id="book-link">
-            ID: {{ book_id }}.
-            <a href="https://wattpad.com/story/{{ book_id }}" target="_blank" id="copyright-link">View this Book Online</a>
+<h1>About the Author</h1>
+<div id="author-container">
+    <div id="author-about">
+        <img src="data:image/jpg;base64,{{avatar}}" alt="{{author}}'s profile picture" id="author-profile-picture">
+        <h2 id="author-name">
+            <a href="https://wattpad.com/user/{{ username }}" id="author-link">{{ username }}</a>
+        </h2>
+        <hr id="author-divider">
+        <p id="author-bio">
+            {{ author_bio }}
         </p>
     </div>
+</div>
 
-    <div id="book">
-        <section id="contents" class="toc">
-            <h1>Table of Contents</h1>
-            <ul>
-                {% for part_id in parts %}
-                    <li><a href="#{{part_id}}"></a></li>
-                {% endfor %}
-            </ul>
-            </section>
-            {% for part_id in parts %}
-
-            {{parts[part_id] | safe}}
-        {% endfor %}
-    </div>
-
-    <h1>About the Author</h1>
-    <div id="author-container">
-        <div id="author-about">
-            <img src="data:image/jpg;base64,{{avatar}}" alt="{{author}}'s profile picture" id="author-profile-picture">
-            <h2 id="author-name">
-                <a href="https://wattpad.com/user/{{ username }}" id="author-link">{{ username }}</a>
-            </h2>
-            <hr id="author-divider">
-            <p id="author-bio">
-                {{ description }}
-            </p>
-        </div>
-    </div>
 </html>

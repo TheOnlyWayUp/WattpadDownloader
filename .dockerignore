@@ -1,0 +1,10 @@
+__pycache__
+*ipynb
+build
+.idea
+.vscode
+.venv
+.env
+*log
+*.md
+uv.lock
