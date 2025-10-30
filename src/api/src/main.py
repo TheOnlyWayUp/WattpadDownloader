@@ -161,6 +161,13 @@ async def handle_download(
         else:
             cookies = None
 
+        if format == DownloadFormat.pdf and not PDFS_ENABLED:
+            logger.error("PDF Downloads not enabled.")
+            return HTMLResponse(
+                status_code=403,
+                content='PDF Downloads have been disabled by the server administrator. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
+            )
+
         match mode:
             case DownloadMode.story:
                 story_id = download_id
@@ -195,12 +202,6 @@ async def handle_download(
                 book = EPUBGenerator(metadata, part_trees, cover_data, images)
                 media_type = "application/epub+zip"
             case DownloadFormat.pdf:
-                if not PDFS_ENABLED:
-                    logger.error("PDF Downloads not enabled.")
-                    return HTMLResponse(
-                        status_code=403,
-                        content='PDF Downloads have been disabled by the server administrator. Support is available on the <a href="https://discord.gg/P9RHC4KCwd" target="_blank">Discord</a>',
-                    )
                 author_image = await fetch_image(
                     metadata["user"]["avatar"].replace("-256-", "-512-")
                 )
