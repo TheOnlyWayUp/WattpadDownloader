@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:20-alpine
 
 WORKDIR /build
 COPY src/frontend/package*.json .
@@ -13,15 +13,12 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-COPY --from=nobodyxu/apt-fast:latest-debian-buster-slim /usr/local/ /usr/local/
-
-RUN apt update
-RUN apt install -y aria2
-RUN apt-fast install -y git build-essential python3.13-dev libgobject-2.0 libpango-1.0 libpangoft2-1.0
+RUN apt update && \
+    apt install -y git build-essential python3.13-dev libgobject-2.0 libpango-1.0 libpangoft2-1.0 && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 # aiohttp-client-cache depends on multipart, which requires python3.13-dev to build successfully on 3.13
 # weasyprint depends on libgoject, libpango, and libpangoft2
-
-RUN rm -rf /var/lib/apt/lists/*
 # https://github.com/TheOnlyWayUp/WattpadDownloader/pull/82#discussion_r2470358950
 
 
@@ -32,7 +29,7 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 COPY src/api/pyproject.toml /app
-RUN uv sync
+RUN uv sync && uv cache clean
 COPY src/api/ /app
 COPY --from=0 /build/build /app/src/build
 
