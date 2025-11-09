@@ -14,7 +14,7 @@ FROM python:3.13-slim
 WORKDIR /app
 
 RUN apt update && \
-    apt install -y git build-essential python3.13-dev libgobject-2.0 libpango-1.0 libpangoft2-1.0 && \
+    apt install -y git build-essential python3.13-dev libglib2.0-0 libpango-1.0-0 libpangoft2-1.0-0 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 # aiohttp-client-cache depends on multipart, which requires python3.13-dev to build successfully on 3.13
