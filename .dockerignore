@@ -8,3 +8,4 @@ build
 *log
 *.md
 src/api/uv.lock
+__pycache__
