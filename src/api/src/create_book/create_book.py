@@ -11,7 +11,7 @@ from pydantic import TypeAdapter
 
 from .exceptions import PartNotFoundError, StoryNotFoundError
 from .logs import logger
-from .models import Story
+from .models import Story, List
 from .vars import cache, headers
 
 story_ta = TypeAdapter(Story)
@@ -70,7 +70,7 @@ async def fetch_story_from_partId(
             headers=headers, cache=None if cookies else cache
         ) as session:  # Don't cache requests with Cookies.
             async with session.get(
-                f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId,group(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username,avatar,description),parts(id,title),cover,copyright)"
+                f"https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=groupId,group(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username,avatar,description),parts(id,title,deleted),cover,copyright)"
             ) as response:
                 body = await response.json()
 
@@ -93,7 +93,7 @@ async def fetch_story(story_id: int, cookies: Optional[dict] = None) -> Story:
             headers=headers, cookies=cookies, cache=None if cookies else cache
         ) as session:
             async with session.get(
-                f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username,avatar,description),parts(id,title),cover,copyright"
+                f"https://www.wattpad.com/api/v3/stories/{story_id}?fields=tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username,avatar,description),parts(id,title,deleted),cover,copyright"
             ) as response:
                 body = await response.json()
 
@@ -127,3 +127,21 @@ async def fetch_story_content_zip(
                 bytes_stream = BytesIO(await response.read())
 
         return bytes_stream
+
+
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def fetch_list(list_id: int, cookies: Optional[dict] = None) -> List:
+    """Fetch List metadata from a List ID."""
+    with start_action(action_type="api_fetch_list", list_id=list_id):
+        async with CachedSession(
+            headers=headers,
+            cookies=cookies,
+            cache=None if cookies else cache,
+        ) as session:  # Don't cache requests with Cookies.
+            async with session.get(
+                f"https://www.wattpad.com/api/v3/lists/{list_id}?fields=name,stories(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username,avatar,description),parts(id,title,deleted),cover,copyright)"
+            ) as response:
+                response.raise_for_status()
+                body = await response.json()
+
+        return body

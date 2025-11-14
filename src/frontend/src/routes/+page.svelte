@@ -11,7 +11,7 @@
     password: ""
   });
   let downloadId = $state("");
-  /** @type {"story" | "part" | ""} */
+  /** @type {"story" | "part" | "list" |""} */
   let mode = $state("");
   let inputUrl = $state("");
 
@@ -82,6 +82,12 @@
       mode = "story";
       setInputAsValid(
         input.split("?", 1)[0].split("/stories/")[1] // removes params
+      );
+    } else if (input.includes("/list/")) {
+      // https://www.wattpad.com/list/829974064
+      mode = "list";
+      setInputAsValid(
+        input.split("?", 1)[0].split("/list/")[1] // removes params
       );
     } else {
       // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
