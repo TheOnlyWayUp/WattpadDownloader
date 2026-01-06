@@ -174,12 +174,26 @@ async def handle_download(
         story_zip = await fetch_story_content_zip(story_id, cookies)
         archive = ZipFile(story_zip, "r")
 
-        part_trees: list[BeautifulSoup] = [
-            clean_tree(
-                part["title"], part["id"], archive.read(str(part["id"])).decode("utf-8")
+        # Transform part metadata into an easily-indexable dictionary
+        part_id_title_dictionary = {
+            str(part["id"]): part["title"] for part in metadata["parts"]
+        }
+
+        part_trees: list[BeautifulSoup] = []
+
+        for id in archive.namelist():
+            if (
+                id not in part_id_title_dictionary
+            ):  # If a part is deleted and the old story_zip is cached, this is needed to avoid a KeyError exception
+                continue
+
+            part_trees.append(
+                clean_tree(
+                    part_id_title_dictionary[id],
+                    id,
+                    archive.read(id).decode("utf-8"),
+                )
             )
-            for part in metadata["parts"]
-        ]
 
         images = (
             [await fetch_tree_images(tree) for tree in part_trees]
