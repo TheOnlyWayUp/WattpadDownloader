@@ -44,7 +44,7 @@
       >
     </div>
     <p>
-      Copyright © 2025 - All rights reserved by <a
+      Copyright © 2026 - All rights reserved by <a
         href="https://rambhat.la"
         class="link"
         target="_blank"
