@@ -174,12 +174,26 @@ async def handle_download(
         story_zip = await fetch_story_content_zip(story_id, cookies)
         archive = ZipFile(story_zip, "r")
 
-        part_trees: list[BeautifulSoup] = [
-            clean_tree(
-                part["title"], part["id"], archive.read(str(part["id"])).decode("utf-8")
+        # Transform part metadata into an easily-indexable dictionary
+        part_id_title_dictionary = {
+            str(part["id"]): part["title"] for part in metadata["parts"]
+        }
+
+        part_trees: list[BeautifulSoup] = []
+
+        for id in archive.namelist():
+            if (
+                id not in part_id_title_dictionary
+            ):  # If a part is deleted and the old story_zip is cached, this is needed to avoid a KeyError exception
+                continue
+
+            part_trees.append(
+                clean_tree(
+                    part_id_title_dictionary[id],
+                    id,
+                    archive.read(id).decode("utf-8"),
+                )
             )
-            for part in metadata["parts"]
-        ]
 
         images = (
             [await fetch_tree_images(tree) for tree in part_trees]
@@ -209,17 +223,26 @@ async def handle_download(
 
         book_buffer = book.dump()
 
-        async def iterfile():
-            while chunk := book_buffer.read(512 * 4):  # 4 kb/s
-                await asyncio.sleep(0.1)  # throttle download speed
+        async def iterfile(file_size):
+            chunk_size = 512 * 4
+            sleep_duration = 0.1
+            num_chunks = 10 * 60 / sleep_duration  # number of chunks in 10 minutes
+            if (
+                num_chunks * chunk_size < file_size
+            ):  # Will the download take >10 minutes
+                chunk_size = int(file_size / num_chunks)
+            while chunk := book_buffer.read(chunk_size):
+                await asyncio.sleep(sleep_duration)  # throttle download speed
                 yield chunk
 
+        file_size = book_buffer.getbuffer().nbytes
+
         return StreamingResponse(
-            iterfile(),
+            iterfile(file_size),
             media_type=media_type,
             headers={
                 "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"',  # Thanks https://stackoverflow.com/a/72729058
-                "Content-Length": str(book_buffer.getbuffer().nbytes),
+                "Content-Length": str(file_size),
             },
         )
 

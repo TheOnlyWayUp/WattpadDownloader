@@ -19,7 +19,7 @@
           href="https://github.com/TheOnlyWayUp"
           class="underline"
           target="_blank">TheOnlyWayUp</a
-        > © 2025
+        > © 2026
       </p>
     </aside>
   </footer>
