@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
 WORKDIR /build
-COPY src/frontend/package*.json .
+COPY src/frontend/package*.json ./
 RUN rm -rf node_modules
 RUN rm -rf build
 RUN npm install
