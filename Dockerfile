@@ -5,7 +5,7 @@ COPY src/frontend/package*.json ./
 RUN rm -rf node_modules
 RUN rm -rf build
 RUN npm install
-COPY src/frontend/. .
+COPY src/frontend/. ./
 RUN npm run build
 # Thanks https://stackoverflow.com/q/76988450
 
