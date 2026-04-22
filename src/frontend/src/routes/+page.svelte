@@ -181,6 +181,7 @@
             <!-- TODO: 'max-lg: hidden' to hide on screen sizes smaller than lg. I'll do this when I figure out how to make this show up _below_ the card on smaller screen sizes. -->
             <!-- <li>12/24 - ⚡ Super-fast Downloads!</li>
             <li>12/24 - 📑 PDF Downloads!</li> -->
+            <li>04/26 - 📋 List, Library, and Archive Downloads!</li>
             <li>03/26 - ⚒️ Fix Tags & Broken italic/bold text</li>
             <li>05/25 - ⚖️ Legal Compliance</li>
             <li>12/24 - 📂 Less Errors, Throttled Downloads</li>
@@ -235,7 +236,7 @@
               </label>
 
               <label class="label cursor-pointer text-gray-800">
-                <span class="label-text">This is a Paid Story, and I've purchased it</span>
+                <span class="label-text">This contains paid content, and I've purchased it</span>
                 <input
                   type="radio"
                   name="specialSelector"
@@ -385,12 +386,15 @@
         For example,
         <span class="bg-slate-100 p-1 font-mono"
           >wattpad.com/<span class="rounded-sm bg-amber-200">story</span
-          >/237369078-wattpad-books-presents</span
+          >/9341306-news-updates</span
         >.
       </li>
       <li>
-        <span class="bg-slate-100 p-1 font-mono">https://www.wattpad.com/939103774-given</span> is okay
+        <span class="bg-slate-100 p-1 font-mono">https://www.wattpad.com/1623482034-news-updates</span> is okay
         too.
+      </li>
+      <li>
+        Lists are supported as well! <span class="bg-slate-100 p-1 font-mono">https://www.wattpad.com/list/1582628905</span>
       </li>
       <li>Paste the URL and hit Download!</li>
     </ol>
