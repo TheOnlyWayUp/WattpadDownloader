@@ -1,28 +1,34 @@
 <script>
   let downloadImages = $state(false);
   let downloadAsPdf = $state(false); // 0 = epub, 1 = pdf
-  let isPaidStory = $state(false);
+  let specialSelector = $state("");
   let invalidUrl = $state(false);
   let afterDownloadPage = $state(false);
+  let rememberedMode = $state("");
   let credentials = $state({
     username: "",
     password: ""
   });
   let downloadId = $state("");
-  /** @type {"story" | "part" | ""} */
+  /** @type {"story" | "part" | "list" | "library" | "archive"| ""} */
   let mode = $state("");
   let inputUrl = $state("");
 
+  let loginRequired = $derived(specialSelector != "");
+
+  let noIdDownload = $derived(loginRequired && specialSelector != "paid");
+
   let buttonDisabled = $derived(
-    !inputUrl || (isPaidStory && !(credentials.username && credentials.password))
+    (!inputUrl && !noIdDownload) ||
+      (loginRequired && !(credentials.username && credentials.password))
   );
 
   let url = $derived(
     `/download/` +
-      downloadId +
+      (noIdDownload ? "0" : downloadId) +
       `?om=1` +
       (downloadImages ? "&download_images=true" : "") +
-      (isPaidStory
+      (loginRequired
         ? `&username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`
         : "") +
       `&mode=${mode}` +
@@ -72,14 +78,23 @@
     if (input.includes("/story/")) {
       // https://wattpad.com/story/237369078-wattpad-books-presents
       mode = "story";
+      rememberedMode = mode;
       setInputAsValid(
         input.split("-", 1)[0].split("?", 1)[0].split("/story/")[1] // removes tracking fields and title
       );
     } else if (input.includes("/stories/")) {
       // https://www.wattpad.com/api/v3/stories/237369078?fields=...
       mode = "story";
+      rememberedMode = mode;
       setInputAsValid(
         input.split("?", 1)[0].split("/stories/")[1] // removes params
+      );
+    } else if (input.includes("/list/")) {
+      // https://www.wattpad.com/list/1582628905
+      mode = "list";
+      rememberedMode = mode;
+      setInputAsValid(
+        input.split("?", 1)[0].split("/list/")[1] // removes tracking fields
       );
     } else {
       // https://www.wattpad.com/939051741-wattpad-books-presents-the-qb-bad-boy-and-me
@@ -87,6 +102,7 @@
       if (/^\d+$/.test(input)) {
         // If "wattpad.com/{downloadId}" contains only numbers
         mode = "part";
+        rememberedMode = mode;
         setInputAsValid(input);
       } else {
         setInputAsInvalid("");
@@ -96,6 +112,15 @@
     // Originally, I was going to call the Wattpad API (wattpad.com/api/v3/stories/${story_id}), but Wattpad kept blocking those requests. I suspect it has something to do with the Origin header, I wasn't able to remove it.
     // In the future, if this is considered, it would be cool if we could derive the Story ID from a pasted Part URL. Refer to @AaronBenDaniel's https://github.com/AaronBenDaniel/WattpadDownloader/blob/49b29b245188149f2d24c0b1c59e4c7f90f289a9/src/api/src/create_book.py#L156 (https://www.wattpad.com/api/v3/story_parts/{part_id}?fields=url).
   };
+
+  function toggle(value) {
+    specialSelector = specialSelector === value ? "" : value;
+    if (specialSelector === "library" || specialSelector === "archive") {
+      mode = specialSelector;
+    } else {
+      mode = rememberedMode;
+    }
+  }
 </script>
 
 <div>
@@ -188,6 +213,7 @@
                 bind:value={() => inputUrl, setInputUrl}
                 required
                 name="input_url"
+                disabled={noIdDownload}
               />
               <label class="label" for="input_url">
                 {#if invalidUrl}
@@ -211,12 +237,37 @@
               <label class="label cursor-pointer text-gray-800">
                 <span class="label-text">This is a Paid Story, and I've purchased it</span>
                 <input
-                  type="checkbox"
+                  type="radio"
+                  name="specialSelector"
                   class="checkbox-warning checkbox shadow-md"
-                  bind:checked={isPaidStory}
+                  value="paid"
+                  checked={specialSelector === "paid"}
+                  onclick={() => toggle("paid")}
                 />
               </label>
-              {#if isPaidStory}
+              <label class="label cursor-pointer text-gray-800">
+                <span class="label-text">I want to download my entire library</span>
+                <input
+                  type="radio"
+                  name="specialSelector"
+                  class="checkbox-warning checkbox shadow-md"
+                  value="library"
+                  checked={specialSelector === "library"}
+                  onclick={() => toggle("library")}
+                />
+              </label>
+              <label class="label cursor-pointer text-gray-800">
+                <span class="label-text">I want to download my entire archive</span>
+                <input
+                  type="radio"
+                  name="specialSelector"
+                  class="checkbox-warning checkbox shadow-md"
+                  value="archive"
+                  checked={specialSelector === "archive"}
+                  onclick={() => toggle("archive")}
+                />
+              </label>
+              {#if loginRequired}
                 <label class="input input-bordered flex items-center gap-2">
                   Username
                   <input
