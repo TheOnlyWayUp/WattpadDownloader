@@ -24,12 +24,15 @@ from create_book import (
     PDFGenerator,
     StoryNotFoundError,
     WattpadError,
+    fetch_archive,
     fetch_cookies,
     fetch_image,
     fetch_story,
     fetch_story_content_zip,
     fetch_story_from_partId,
+    fetch_library,
     fetch_list,
+    fetch_username,
     logger,
     slugify,
     Story,
@@ -87,6 +90,8 @@ class DownloadMode(Enum):
     story = "story"
     part = "part"
     list = "list"
+    archive = "archive"
+    library = "library"
 
 
 async def download_story(
@@ -163,8 +168,8 @@ async def download_story(
         return book.dump()
 
 
-async def download_list(
-    metadata: List,
+async def download_many_stories(
+    stories: list[Story],
     download_images: bool = False,
     format: DownloadFormat = DownloadFormat.epub,
     cookies: dict = None,
@@ -172,7 +177,7 @@ async def download_list(
     output_buffer = BytesIO()
 
     with ZipFile(output_buffer, "w") as archive:
-        for story in metadata["stories"]:
+        for story in stories:
             story_file = await download_story(story, download_images, format, cookies)
             file_name = f"{slugify(story['title'])}_{story['id']}_{'images' if download_images else ''}.{'epub' if format==DownloadFormat.epub else 'pdf'}"
             archive.writestr(file_name, story_file.read())
@@ -264,6 +269,7 @@ async def handle_download(
                 media_type = "application/pdf"
                 extension = "pdf"
 
+        id_download = True
         match mode:
             case DownloadMode.story:
                 metadata = await fetch_story(download_id, cookies)
@@ -279,10 +285,38 @@ async def handle_download(
                 )
             case DownloadMode.list:
                 metadata = await fetch_list(download_id, cookies)
-                output_buffer = await download_list(
-                    metadata, download_images, format, cookies
+                output_buffer = await download_many_stories(
+                    metadata["stories"], download_images, format, cookies
                 )
 
+                media_type = "application/zip"
+                extension = "zip"
+            case DownloadMode.archive:
+                id_download = False
+                if not cookies:
+                    return HTMLResponse(
+                        status_code=422,
+                        content="Login credenials required for archive downloads",
+                    )
+                username = await fetch_username(cookies)
+                stories = await fetch_archive(username, cookies)
+                output_buffer = await download_many_stories(
+                    stories, download_images, format, cookies
+                )
+                media_type = "application/zip"
+                extension = "zip"
+            case DownloadMode.library:
+                id_download = False
+                if not cookies:
+                    return HTMLResponse(
+                        status_code=422,
+                        content="Login credenials required for library downloads",
+                    )
+                username = await fetch_username(cookies)
+                stories = await fetch_library(username, cookies)
+                output_buffer = await download_many_stories(
+                    stories, download_images, format, cookies
+                )
                 media_type = "application/zip"
                 extension = "zip"
 
@@ -304,7 +338,7 @@ async def handle_download(
             iterfile(file_size),
             media_type=media_type,
             headers={
-                "Content-Disposition": f'attachment; filename="{slugify(metadata["name" if mode==DownloadMode.list else "title"])}_{download_id}{"_images" if download_images else ""}.{extension}"',  # Thanks https://stackoverflow.com/a/72729058
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["name" if mode==DownloadMode.list else "title"]) if id_download else (username+'_'+("archive" if mode is DownloadMode.archive else "library"))}{'_'+download_id if id_download else ""}{"_images" if download_images else ""}{'_'+format.value if not id_download else ""}.{extension}"',  # Thanks https://stackoverflow.com/a/72729058
                 "Content-Length": str(file_size),
             },
         )

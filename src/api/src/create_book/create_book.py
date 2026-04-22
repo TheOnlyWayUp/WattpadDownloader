@@ -145,3 +145,64 @@ async def fetch_list(list_id: int, cookies: Optional[dict] = None) -> List:
                 body = await response.json()
 
         return body
+
+
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def fetch_archive(username: str, cookies: dict) -> List(Story):
+    """Fetch Story metadata from users archive"""
+    with start_action(action_type="api_fetch_archive"):
+        username = await fetch_username(cookies)
+
+        async with CachedSession(
+            headers=headers,
+            cookies=cookies,
+        ) as session:
+            stories = []
+            nextUrl = f"https://www.wattpad.com/api/v3/users/{username}/archive?fields=stories(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username,avatar,description),parts(id,title),cover,copyright)&limit=30"
+            while nextUrl:
+                async with session.get(nextUrl) as response:
+                    response.raise_for_status()
+                    body = await response.json()
+                    nextUrl = body.get("nextUrl", None)
+                    for story in body["stories"]:
+                        stories.append(story)
+
+        return stories
+
+
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def fetch_library(username: str, cookies: dict) -> List(Story):
+    """Fetch Story metadata from users library"""
+    with start_action(action_type="api_fetch_archive"):
+        async with CachedSession(
+            headers=headers,
+            cookies=cookies,
+        ) as session:
+            stories = []
+            nextUrl = f"https://www.wattpad.com/api/v3/users/{username}/library?fields=stories(tags,id,title,createDate,modifyDate,language(name),description,completed,mature,url,isPaywalled,user(username,avatar,description),parts(id,title),cover,copyright)&limit=30"
+            while nextUrl:
+                async with session.get(nextUrl) as response:
+                    response.raise_for_status()
+                    body = await response.json()
+                    nextUrl = body.get("nextUrl", None)
+                    for story in body["stories"]:
+                        stories.append(story)
+
+        return stories
+
+
+@backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
+async def fetch_username(cookies: dict) -> str:
+    """Fetch the username corresponding to the given authentication cookies"""
+    with start_action(action_type="api_fetch_username"):
+        async with CachedSession(
+            headers=headers,
+            cookies=cookies,
+        ) as session:
+            async with session.get(
+                "https://www.wattpad.com/list?_data=routes/_currentReads.list"
+            ) as response:
+                response.raise_for_status()
+                body = await response.json()
+
+        return body["username"]
