@@ -151,8 +151,6 @@ async def fetch_list(list_id: int, cookies: Optional[dict] = None) -> List:
 async def fetch_archive(username: str, cookies: dict) -> List(Story):
     """Fetch Story metadata from users archive"""
     with start_action(action_type="api_fetch_archive"):
-        username = await fetch_username(cookies)
-
         async with CachedSession(
             headers=headers,
             cookies=cookies,

@@ -338,7 +338,7 @@ async def handle_download(
             iterfile(file_size),
             media_type=media_type,
             headers={
-                "Content-Disposition": f'attachment; filename="{slugify(metadata["name" if mode==DownloadMode.list else "title"]) if id_download else (username+'_'+("archive" if mode is DownloadMode.archive else "library"))}{'_'+str(download_id) if id_download else ""}{"_images" if download_images else ""}{'_'+format.value if not id_download else ""}.{extension}"',  # Thanks https://stackoverflow.com/a/72729058
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["name" if mode==DownloadMode.list else "title"]) if id_download else (username+'_'+("archive" if mode is DownloadMode.archive else "library"))}{'_'+str(download_id) if id_download else ""}{"_images" if download_images else ""}{'_'+format.value if extension is "zip" else ""}.{extension}"',  # Thanks https://stackoverflow.com/a/72729058
                 "Content-Length": str(file_size),
             },
         )
