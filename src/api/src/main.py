@@ -175,16 +175,23 @@ async def download_many_stories(
     cookies: dict = None,
 ) -> BytesIO:
     output_buffer = BytesIO()
+    with start_action(
+        action_type="download_many_stories",
+        stories=[story["id"] for story in stories],
+        download_images=download_images,
+        format=format,
+    ):
+        with ZipFile(output_buffer, "w") as archive:
+            for story in stories:
+                story_file = await download_story(
+                    story, download_images, format, cookies
+                )
+                file_name = f"{slugify(story['title'])}_{story['id']}_{'images' if download_images else ''}.{'epub' if format==DownloadFormat.epub else 'pdf'}"
+                archive.writestr(file_name, story_file.read())
 
-    with ZipFile(output_buffer, "w") as archive:
-        for story in stories:
-            story_file = await download_story(story, download_images, format, cookies)
-            file_name = f"{slugify(story['title'])}_{story['id']}_{'images' if download_images else ''}.{'epub' if format==DownloadFormat.epub else 'pdf'}"
-            archive.writestr(file_name, story_file.read())
+        output_buffer.seek(0)
 
-    output_buffer.seek(0)
-
-    return output_buffer
+        return output_buffer
 
 
 @app.get("/")

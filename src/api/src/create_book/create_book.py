@@ -171,7 +171,7 @@ async def fetch_archive(username: str, cookies: dict) -> List(Story):
 @backoff.on_exception(backoff.expo, ClientResponseError, max_time=15)
 async def fetch_library(username: str, cookies: dict) -> List(Story):
     """Fetch Story metadata from users library"""
-    with start_action(action_type="api_fetch_archive"):
+    with start_action(action_type="api_fetch_library"):
         async with CachedSession(
             headers=headers,
             cookies=cookies,
