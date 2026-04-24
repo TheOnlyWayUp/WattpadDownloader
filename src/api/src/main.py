@@ -2,6 +2,7 @@
 
 import asyncio
 from enum import Enum
+from io import BytesIO
 from pathlib import Path
 from typing import Optional
 from zipfile import ZipFile
@@ -23,13 +24,19 @@ from create_book import (
     PDFGenerator,
     StoryNotFoundError,
     WattpadError,
+    fetch_archive,
     fetch_cookies,
     fetch_image,
     fetch_story,
     fetch_story_content_zip,
     fetch_story_from_partId,
+    fetch_library,
+    fetch_list,
+    fetch_username,
     logger,
     slugify,
+    Story,
+    List,
 )
 from create_book.parser import clean_tree, fetch_tree_images
 
@@ -82,6 +89,109 @@ class DownloadFormat(Enum):
 class DownloadMode(Enum):
     story = "story"
     part = "part"
+    list = "list"
+    archive = "archive"
+    library = "library"
+
+
+async def download_story(
+    metadata: Story,
+    download_images: bool = False,
+    format: DownloadFormat = DownloadFormat.epub,
+    cookies: dict = None,
+) -> BytesIO:
+    with start_action(
+        action_type="download_story",
+        story_id=metadata["id"],
+        download_images=download_images,
+        format=format,
+    ):
+        # Fetch cover image
+        cover_data = await fetch_image(
+            metadata["cover"].replace("-256-", "-512-")
+        )  # Increase resolution
+        if not cover_data:
+            raise HTTPException(status_code=422)
+
+        # Fetch parts archive
+        story_zip = await fetch_story_content_zip(metadata["id"], cookies)
+        archive = ZipFile(story_zip, "r")
+
+        # Transform part metadata into an easily-indexable dictionary
+        part_id_title_dictionary = {
+            str(part["id"]): part["title"] for part in metadata["parts"]
+        }
+
+        part_trees: list[BeautifulSoup] = []
+
+        for id in archive.namelist():
+            if (
+                id not in part_id_title_dictionary
+            ):  # If a part is deleted and the old story_zip is cached, this is needed to avoid a KeyError exception
+                continue
+
+            part_trees.append(
+                clean_tree(
+                    part_id_title_dictionary[id],
+                    id,
+                    archive.read(id).decode("utf-8"),
+                )
+            )
+
+        # Fetch images
+        images = (
+            [await fetch_tree_images(tree) for tree in part_trees]
+            if download_images
+            else []
+        )
+
+        # Build output file
+        match format:
+            case DownloadFormat.epub:
+                book = EPUBGenerator(metadata, part_trees, cover_data, images)
+            case DownloadFormat.pdf:
+                # Fetch author profile picture
+                author_image = await fetch_image(
+                    metadata["user"]["avatar"].replace("-256-", "-512-")
+                )
+                if not author_image:
+                    raise HTTPException(status_code=422)
+
+                book = PDFGenerator(
+                    metadata, part_trees, cover_data, images, author_image
+                )
+
+        logger.info(f"Retrieved story metadata and cover ({metadata['id']=})")
+
+        book.compile()
+
+        return book.dump()
+
+
+async def download_many_stories(
+    stories: list[Story],
+    download_images: bool = False,
+    format: DownloadFormat = DownloadFormat.epub,
+    cookies: dict = None,
+) -> BytesIO:
+    output_buffer = BytesIO()
+    with start_action(
+        action_type="download_many_stories",
+        stories=[story["id"] for story in stories],
+        download_images=download_images,
+        format=format,
+    ):
+        with ZipFile(output_buffer, "w") as archive:
+            for story in stories:
+                story_file = await download_story(
+                    story, download_images, format, cookies
+                )
+                file_name = f"{slugify(story['title'])}_{story['id']}{'_images' if download_images else ''}.{'epub' if format==DownloadFormat.epub else 'pdf'}"
+                archive.writestr(file_name, story_file.read())
+
+        output_buffer.seek(0)
+
+        return output_buffer
 
 
 @app.get("/")
@@ -130,7 +240,7 @@ async def handle_download(
     password: Optional[str] = None,
 ):
     with start_action(
-        action_type="download",
+        action_type="handle_download",
         download_id=download_id,
         download_images=download_images,
         format=format,
@@ -158,70 +268,64 @@ async def handle_download(
         else:
             cookies = None
 
-        match mode:
-            case DownloadMode.story:
-                story_id = download_id
-                metadata = await fetch_story(story_id, cookies)
-            case DownloadMode.part:
-                story_id, metadata = await fetch_story_from_partId(download_id, cookies)
-
-        cover_data = await fetch_image(
-            metadata["cover"].replace("-256-", "-512-")
-        )  # Increase resolution
-        if not cover_data:
-            raise HTTPException(status_code=422)
-
-        story_zip = await fetch_story_content_zip(story_id, cookies)
-        archive = ZipFile(story_zip, "r")
-
-        # Transform part metadata into an easily-indexable dictionary
-        part_id_title_dictionary = {
-            str(part["id"]): part["title"] for part in metadata["parts"]
-        }
-
-        part_trees: list[BeautifulSoup] = []
-
-        for id in archive.namelist():
-            if (
-                id not in part_id_title_dictionary
-            ):  # If a part is deleted and the old story_zip is cached, this is needed to avoid a KeyError exception
-                continue
-
-            part_trees.append(
-                clean_tree(
-                    part_id_title_dictionary[id],
-                    id,
-                    archive.read(id).decode("utf-8"),
-                )
-            )
-
-        images = (
-            [await fetch_tree_images(tree) for tree in part_trees]
-            if download_images
-            else []
-        )
-
         match format:
             case DownloadFormat.epub:
-                book = EPUBGenerator(metadata, part_trees, cover_data, images)
                 media_type = "application/epub+zip"
+                extension = "epub"
             case DownloadFormat.pdf:
-                author_image = await fetch_image(
-                    metadata["user"]["avatar"].replace("-256-", "-512-")
-                )
-                if not author_image:
-                    raise HTTPException(status_code=422)
-
-                book = PDFGenerator(
-                    metadata, part_trees, cover_data, images, author_image
-                )
                 media_type = "application/pdf"
+                extension = "pdf"
 
-        logger.info(f"Retrieved story metadata and cover ({story_id=})")
+        id_download = True
+        match mode:
+            case DownloadMode.story:
+                metadata = await fetch_story(download_id, cookies)
+                output_buffer = await download_story(
+                    metadata, download_images, format, cookies
+                )
+            case DownloadMode.part:
+                download_id, metadata = await fetch_story_from_partId(
+                    download_id, cookies
+                )
+                output_buffer = await download_story(
+                    metadata, download_images, format, cookies
+                )
+            case DownloadMode.list:
+                metadata = await fetch_list(download_id, cookies)
+                output_buffer = await download_many_stories(
+                    metadata["stories"], download_images, format, cookies
+                )
 
-        book.compile()
-
-        book_buffer = book.dump()
+                media_type = "application/zip"
+                extension = "zip"
+            case DownloadMode.archive:
+                id_download = False
+                if not cookies:
+                    return HTMLResponse(
+                        status_code=422,
+                        content="Login credentials required for archive downloads",
+                    )
+                username = await fetch_username(cookies)
+                stories = await fetch_archive(username, cookies)
+                output_buffer = await download_many_stories(
+                    stories, download_images, format, cookies
+                )
+                media_type = "application/zip"
+                extension = "zip"
+            case DownloadMode.library:
+                id_download = False
+                if not cookies:
+                    return HTMLResponse(
+                        status_code=422,
+                        content="Login credentials required for library downloads",
+                    )
+                username = await fetch_username(cookies)
+                stories = await fetch_library(username, cookies)
+                output_buffer = await download_many_stories(
+                    stories, download_images, format, cookies
+                )
+                media_type = "application/zip"
+                extension = "zip"
 
         async def iterfile(file_size):
             chunk_size = 512 * 4
@@ -231,17 +335,17 @@ async def handle_download(
                 num_chunks * chunk_size < file_size
             ):  # Will the download take >10 minutes
                 chunk_size = int(file_size / num_chunks)
-            while chunk := book_buffer.read(chunk_size):
+            while chunk := output_buffer.read(chunk_size):
                 await asyncio.sleep(sleep_duration)  # throttle download speed
                 yield chunk
 
-        file_size = book_buffer.getbuffer().nbytes
+        file_size = output_buffer.getbuffer().nbytes
 
         return StreamingResponse(
             iterfile(file_size),
             media_type=media_type,
             headers={
-                "Content-Disposition": f'attachment; filename="{slugify(metadata["title"])}_{story_id}{"_images" if download_images else ""}.{format.value}"',  # Thanks https://stackoverflow.com/a/72729058
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["name" if mode==DownloadMode.list else "title"]) if id_download else (username+'_'+("archive" if mode == DownloadMode.archive else "library"))}{'_'+str(download_id) if id_download else ""}{"_images" if download_images else ""}{'_'+format.value if extension == "zip" else ""}.{extension}"',  # Thanks https://stackoverflow.com/a/72729058
                 "Content-Length": str(file_size),
             },
         )

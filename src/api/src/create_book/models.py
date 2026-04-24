@@ -40,3 +40,8 @@ class Story(TypedDict):
     parts: list[Part]
     isPaywalled: bool
     copyright: int
+
+
+class List(TypedDict):
+    name: str
+    stories: list[Story]
