@@ -186,7 +186,7 @@ async def download_many_stories(
                 story_file = await download_story(
                     story, download_images, format, cookies
                 )
-                file_name = f"{slugify(story['title'])}_{story['id']}_{'images' if download_images else ''}.{'epub' if format==DownloadFormat.epub else 'pdf'}"
+                file_name = f"{slugify(story['title'])}_{story['id']}{'_images' if download_images else ''}.{'epub' if format==DownloadFormat.epub else 'pdf'}"
                 archive.writestr(file_name, story_file.read())
 
         output_buffer.seek(0)
@@ -303,7 +303,7 @@ async def handle_download(
                 if not cookies:
                     return HTMLResponse(
                         status_code=422,
-                        content="Login credenials required for archive downloads",
+                        content="Login credentials required for archive downloads",
                     )
                 username = await fetch_username(cookies)
                 stories = await fetch_archive(username, cookies)
@@ -317,7 +317,7 @@ async def handle_download(
                 if not cookies:
                     return HTMLResponse(
                         status_code=422,
-                        content="Login credenials required for library downloads",
+                        content="Login credentials required for library downloads",
                     )
                 username = await fetch_username(cookies)
                 stories = await fetch_library(username, cookies)
@@ -345,7 +345,7 @@ async def handle_download(
             iterfile(file_size),
             media_type=media_type,
             headers={
-                "Content-Disposition": f'attachment; filename="{slugify(metadata["name" if mode==DownloadMode.list else "title"]) if id_download else (username+'_'+("archive" if mode is DownloadMode.archive else "library"))}{'_'+str(download_id) if id_download else ""}{"_images" if download_images else ""}{'_'+format.value if extension is "zip" else ""}.{extension}"',  # Thanks https://stackoverflow.com/a/72729058
+                "Content-Disposition": f'attachment; filename="{slugify(metadata["name" if mode==DownloadMode.list else "title"]) if id_download else (username+'_'+("archive" if mode == DownloadMode.archive else "library"))}{'_'+str(download_id) if id_download else ""}{"_images" if download_images else ""}{'_'+format.value if extension == "zip" else ""}.{extension}"',  # Thanks https://stackoverflow.com/a/72729058
                 "Content-Length": str(file_size),
             },
         )

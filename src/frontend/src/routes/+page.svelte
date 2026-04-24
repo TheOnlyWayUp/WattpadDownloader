@@ -10,7 +10,7 @@
     password: ""
   });
   let downloadId = $state("");
-  /** @type {"story" | "part" | "list" | "library" | "archive"| ""} */
+  /** @type {"story" | "part" | "list" | "library" | "archive" | ""} */
   let mode = $state("");
   let inputUrl = $state("");
 
@@ -385,16 +385,18 @@
       <li>
         For example,
         <span class="bg-slate-100 p-1 font-mono"
-          >wattpad.com/<span class="rounded-sm bg-amber-200">story</span
-          >/9341306-news-updates</span
+          >wattpad.com/<span class="rounded-sm bg-amber-200">story</span>/9341306-news-updates</span
         >.
       </li>
       <li>
-        <span class="bg-slate-100 p-1 font-mono">https://www.wattpad.com/1623482034-news-updates</span> is okay
-        too.
+        <span class="bg-slate-100 p-1 font-mono"
+          >https://www.wattpad.com/1623482034-news-updates</span
+        > is okay too.
       </li>
       <li>
-        Lists are supported as well! <span class="bg-slate-100 p-1 font-mono">https://www.wattpad.com/list/1582628905</span>
+        Lists are supported as well! <span class="bg-slate-100 p-1 font-mono"
+          >https://www.wattpad.com/list/1582628905</span
+        >
       </li>
       <li>Paste the URL and hit Download!</li>
     </ol>
