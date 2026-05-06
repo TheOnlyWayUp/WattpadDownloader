@@ -139,8 +139,8 @@
           <p class="max-w-md pt-6 text-lg">
             {t('hero_description')}
           </p>
-          <div class="flex items-center justify-center sm:justify-start gap-2 pt-4">
-            <span class="text-lg font-bold">Language:</span>
+          <div class="pt-4">
+            <span class="text-lg font-bold block mb-2">Site Language</span>
             <LanguageSelector />
           </div>
           <ul class="list list-inside pt-4 text-xl">
@@ -192,11 +192,11 @@
                 {/if}
               </label>
 
-              <label class="label cursor-pointer text-gray-800">
-                <span class="label-text">{t('paid_story_label')}</span>
+              <label class="label cursor-pointer text-gray-800 flex-wrap">
+                <span class="label-text break-words whitespace-normal">{t('paid_story_label')}</span>
                 <input
                   type="checkbox"
-                  class="checkbox-warning checkbox shadow-md"
+                  class="checkbox-warning checkbox shadow-md shrink-0"
                   bind:checked={isPaidStory}
                 />
               </label>

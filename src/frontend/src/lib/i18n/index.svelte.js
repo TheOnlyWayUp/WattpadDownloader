@@ -2,10 +2,14 @@ import en from './locales/en.json';
 import vi from './locales/vi.json';
 import th from './locales/th.json';
 import si from './locales/si.json';
+import my from './locales/my.json';
+import es from './locales/es.json';
+import pt from './locales/pt.json';
+import tr from './locales/tr.json';
 
-const allTranslations = { en, vi, th, si };
+const allTranslations = { en, vi, th, si, my, es, pt, tr };
 const STORAGE_KEY = 'wpd-locale';
-const SUPPORTED = ['en', 'vi', 'th', 'si'];
+const SUPPORTED = ['en', 'vi', 'th', 'si', 'my', 'es', 'pt', 'tr'];
 
 export const i18n = $state({ locale: 'en' });
 
@@ -14,6 +18,10 @@ export const LOCALES = [
   { code: 'vi', name: 'Tiếng Việt', englishName: 'Vietnamese', flag: '🇻🇳', searchTerms: 'vietnamese vietnam tieng viet' },
   { code: 'th', name: 'ไทย', englishName: 'Thai', flag: '🇹🇭', searchTerms: 'thai thailand' },
   { code: 'si', name: 'සිංහල', englishName: 'Sinhala', flag: '🇱🇰', searchTerms: 'sinhala sri lanka sinhalese' },
+  { code: 'my', name: 'မြန်မာ', englishName: 'Burmese', flag: '🇲🇲', searchTerms: 'burmese myanmar burma' },
+  { code: 'es', name: 'Español', englishName: 'Spanish', flag: '🇪🇸', searchTerms: 'spanish espanol spain' },
+  { code: 'pt', name: 'Português', englishName: 'Portuguese', flag: '🇧🇷', searchTerms: 'portuguese portugues brazil brasil portugal' },
+  { code: 'tr', name: 'Türkçe', englishName: 'Turkish', flag: '🇹🇷', searchTerms: 'turkish turkce turkey turk' },
 ];
 
 export function t(key) {
