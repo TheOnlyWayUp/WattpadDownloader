@@ -1,5 +1,6 @@
 <script>
   import "../app.css";
+  import { init, i18n, t } from '$lib/i18n/index.svelte.js';
   /**
    * @typedef {Object} Props
    * @property {import('svelte').Snippet} [children]
@@ -7,6 +8,14 @@
 
   /** @type {Props} */
   let { children } = $props();
+
+  $effect(() => {
+    init();
+  });
+
+  $effect(() => {
+    document.documentElement.lang = i18n.locale;
+  });
 </script>
 
 <svelte:head>
