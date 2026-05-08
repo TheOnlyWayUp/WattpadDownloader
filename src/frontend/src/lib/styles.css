@@ -1,0 +1,475 @@
+:root {
+  /* Paper / page */
+  --paper: #FAF7F0;
+  /* page background */
+  --paper-2: #F4F0E5;
+  /* subtle alt bg */
+  --card: #FFFFFF;
+  /* card background */
+  --card-soft: #FBF8F1;
+  /* soft card panels (e.g. account chip in claude designs) */
+
+  /* Ink */
+  --ink: #1F1B16;
+  /* primary text */
+  --ink-2: #3F3A33;
+  /* secondary text */
+  --ink-3: #6B6358;
+  /* muted text */
+  --ink-4: #9C9384;
+  /* placeholder, very muted */
+
+  /* Lines & subtle fills */
+  --line: #E8E2D4;
+  --line-2: #DCD4C2;
+  --line-soft: #F0EBDD;
+  --fill-soft: #F5F0E2;
+
+  /* Accent — warm orange/amber from claude design (selected tile, section number badge) */
+  --accent: #E89A3D;
+  /* warm orange-amber */
+  --accent-soft: #FCEFCF;
+  /* soft chip background */
+  --accent-line: #F1D08A;
+  --accent-ink: #8A4A0E;
+  --accent-strong: #D17A1F;
+  /* hover / stronger accent */
+
+  /* Donor note green tint (from current site) — kept subtle */
+  --donor-bg: #DDF1D6;
+  --donor-line: #BCDFB1;
+  --donor-ink: #1F3D17;
+
+  /* Background panel (foreground card behind everything) */
+  --panel-bg: #F6F6F4;
+
+  /* Type — single sans-serif family used everywhere */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-serif: var(--font-sans);
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-serif);
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: url("background.svg");
+  background-repeat: repeat;
+  background-size: 600px 600px;
+  background-attachment: fixed;
+  font-size: 16px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+/* ── Card (download form) ──────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 22px 16px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 1px 2px rgba(31, 27, 22, 0.04),
+    0 18px 40px -20px rgba(31, 27, 22, 0.12);
+}
+
+.section {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 6px 14px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line-soft);
+  transition: opacity 200ms ease;
+}
+
+.section:first-of-type {
+  border-top: 0;
+  padding-top: 2px;
+}
+
+.section .num {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  border: 1px solid var(--accent-line);
+}
+
+.section .head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 22px;
+}
+
+.section .head h3 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.section .body {
+  grid-column: 2;
+}
+
+/* Section state pills */
+.pill {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  color: var(--ink-3);
+  background: var(--paper-2);
+  white-space: nowrap;
+}
+
+.pill.required {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+/* Disabled (greyed-out) — non-interactive but still readable */
+.section.is-disabled {
+  opacity: 0.55;
+}
+
+.section.is-disabled .body {
+  pointer-events: none;
+}
+
+.section.is-disabled input,
+.section.is-disabled .tile {
+  cursor: not-allowed;
+}
+
+.section.is-disabled .num {
+  background: var(--paper-2);
+  color: var(--ink-3);
+  border-color: var(--line-2);
+}
+
+/* ── Tiles ─────────────────────────────────────────────────────── */
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tiles>.tile {
+  flex: 1 1 110px;
+  min-width: 0;
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 1px;
+  padding: 10px 12px 11px;
+  background: var(--card-soft);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.tile:hover {
+  border-color: var(--line-2);
+  background: #FFFDF6;
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tile[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: #FFF7E6;
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.tile .icon {
+  grid-row: 1;
+  grid-column: 1;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+}
+
+.tile[aria-pressed="true"] .icon {
+  color: var(--accent-ink);
+}
+
+.tile .label {
+  grid-row: 1;
+  grid-column: 2;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+
+.tile .desc {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+
+/* ── Inputs ────────────────────────────────────────────────────── */
+.field-label {
+  display: block;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-help {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: black;
+  transition: color 0.3s;
+  cursor: pointer;
+}
+
+.field-help:hover {
+  color: var(--accent-ink)
+}
+
+.input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #FFFFFF;
+  height: 36px;
+  width: 100%;
+  min-width: 0;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201, 162, 74, 0.18);
+}
+
+.input .lead {
+  color: var(--ink-3);
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink);
+  height: 100%;
+  padding: 0;
+}
+
+.input input::placeholder {
+  color: var(--ink-4);
+}
+
+.input .trail {
+  color: var(--ink-3);
+  display: inline-flex;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.input .trail:hover {
+  color: var(--ink);
+  background: var(--fill-soft);
+}
+
+/* Login fields layout — stacked vertically */
+.login-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.login-stack>* {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Checkboxes */
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.check input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--line-2);
+  border-radius: 3.5px;
+  background: #fff;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.check input:hover {
+  border-color: var(--ink-3);
+}
+
+.check input:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.check input:checked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3.5 8.5l3 3 6-6.5' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>");
+  background-size: contain;
+}
+
+.check input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.check .muted {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.check.is-disabled {
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+
+/* URL helper row (link + paid checkbox) */
+.url-helper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+/* Footer of card */
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+  margin-top: 4px;
+}
+
+/* Buttons */
+.btn {
+  appearance: none;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 120ms ease, transform 80ms ease, box-shadow 120ms ease;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.15) inset, 0 6px 16px -6px rgba(232, 154, 61, 0.55);
+}
+
+.btn:hover {
+  background: var(--accent-strong);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  background: var(--line-2);
+  color: #fff;
+  cursor: not-allowed;
+  box-shadow: none;
+}
