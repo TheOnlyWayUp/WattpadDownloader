@@ -183,10 +183,17 @@ async def download_many_stories(
     ):
         with ZipFile(output_buffer, "w") as archive:
             for story in stories:
-                story_file = await download_story(
-                    story, download_images, format, cookies
-                )
-                file_name = f"{slugify(story['title'])}_{story['id']}{'_images' if download_images else ''}.{'epub' if format==DownloadFormat.epub else 'pdf'}"
+                try:
+                    story_file = await download_story(
+                        story, download_images, format, cookies
+                    )
+                    file_name = f"{slugify(story['title'])}_{story['id']}{'_images' if download_images else ''}.{'epub' if format==DownloadFormat.epub else 'pdf'}"
+                except Exception as error:
+                    story_file = BytesIO()
+                    story_file.write(str(error).encode('utf-8'))
+                    story_file.seek(0)
+                    file_name = f"{slugify(story['title'])}_{story['id']}_FAILURE.txt"
+
                 archive.writestr(file_name, story_file.read())
 
         output_buffer.seek(0)
