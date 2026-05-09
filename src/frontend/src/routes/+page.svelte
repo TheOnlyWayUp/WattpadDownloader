@@ -451,17 +451,22 @@
     <ol class="list list-inside list-disc space-y-4 py-4">
       <li>{t("modal_step1")}</li>
       <li>
-        {t("modal_step2_before")}<span class="bg-slate-100 p-1 font-mono"
-          >wattpad.com/<span class="rounded-sm bg-amber-200">story</span
-          >/237369078-wattpad-books-presents</span
+        {t("modal_step2_before")}
+        <span class="bg-slate-100 p-1 font-mono"
+          >wattpad.com/<span class="rounded-sm bg-amber-200">story</span>/9341306-news-updates</span
         >{t("modal_step2_after")}
       </li>
       <li>
-        <span class="bg-slate-100 p-1 font-mono">https://www.wattpad.com/939103774-given</span>{t(
-          "modal_step3_after"
-        )}
+        <span class="bg-slate-100 p-1 font-mono"
+          >https://www.wattpad.com/1623482034-news-updates</span
+        >{t("modal_step3_after")}
       </li>
-      <li>{t("modal_step4")}</li>
+      <li>
+        {t("modal_step4")}<span class="bg-slate-100 p-1 font-mono"
+          >https://www.wattpad.com/list/1582628905</span
+        >
+      </li>
+      <li>{t("modal_step5")}</li>
     </ol>
   </div>
   <form method="dialog" class="modal-backdrop">
